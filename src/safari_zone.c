@@ -1,4 +1,5 @@
 #include "global.h"
+#include "soul_link.h"
 #include "battle.h"
 #include "battle_setup.h"
 #include "event_scripts.h"
@@ -64,7 +65,7 @@ void SafariZoneRetirePrompt(void)
 
 void CB2_EndSafariBattle(void)
 {
-    if(gSaveBlock1Ptr->keyFlags.nuzlocke == 1)
+    if(gSaveBlock1Ptr->keyFlags.nuzlocke == 1 && !SoulLink_IsEnabled())
     {   
         if(!IsWildMonNuzlockeDupe(GetMonData(&gEnemyParty[0], MON_DATA_SPECIES)))
         {

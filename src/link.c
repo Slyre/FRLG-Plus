@@ -973,6 +973,13 @@ u8 GetBlockReceivedStatus(void)
     return (gBlockReceivedStatus[3] << 3) | (gBlockReceivedStatus[2] << 2) | (gBlockReceivedStatus[1] << 1) | (gBlockReceivedStatus[0] << 0);
 }
 
+u16 GetCableBlockReceivedSize(u8 player)
+{
+    if (gWirelessCommType || player >= MAX_LINK_PLAYERS)
+        return 0;
+    return sBlockRecv[player].size;
+}
+
 static void SetBlockReceivedFlag(u8 who)
 {
     if (gWirelessCommType == 1)

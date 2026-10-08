@@ -1,0 +1,3 @@
+Sprites: graphics/pokemon in FRLG-Plus.
+English species names: src/data/text/species_names.h in FRLG-Plus.
+These files ship with the companion; no asset download is needed during play.

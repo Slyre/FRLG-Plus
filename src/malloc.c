@@ -1,3 +1,4 @@
+#include "soul_link_companion.h"
 #include "global.h"
 
 static void *sHeapStart;
@@ -185,6 +186,7 @@ bool32 CheckMemBlockInternal(void *heapStart, void *pointer)
 
 void InitHeap(void *heapStart, u32 heapSize)
 {
+    SoulLink_CompanionReset();
     sHeapStart = heapStart;
     sHeapSize = heapSize;
     PutFirstMemBlockHeader(heapStart, heapSize);

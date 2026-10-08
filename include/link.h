@@ -247,6 +247,7 @@ extern u8 gShouldAdvanceLinkState;
 extern u16 gLinkPartnersHeldKeys[6];
 
 void Task_DestroySelf(u8);
+void Task_TriggerHandshake(u8);
 void OpenLink(void);
 void CloseLink(void);
 u16 LinkMain2(const u16 *);
@@ -262,6 +263,7 @@ u8 GetMultiplayerId(void);
 u8 BitmaskAllOtherLinkPlayers(void);
 bool8 SendBlock(u8, const void *, u16);
 u8 GetBlockReceivedStatus(void);
+u16 GetCableBlockReceivedSize(u8 player);
 void ResetBlockReceivedFlags(void);
 void ResetBlockReceivedFlag(u8);
 void SetLinkDebugValues(u32, u32);

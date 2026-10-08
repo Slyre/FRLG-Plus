@@ -668,7 +668,8 @@ u8 CreateStartMenuWindow(u8 height)
 {
     if (sStartMenuWindowId == 0xFF)
     {
-        struct WindowTemplate template = SetWindowTemplateFields(0, 0x16, 1, 7, height * 2 - 1, DLG_WINDOW_PALETTE_NUM, 0x13D);
+        // Eight entries must fit above the help window at tile row 15.
+        struct WindowTemplate template = SetWindowTemplateFields(0, 0x15, 1, 8, height == 8 ? 14 : height * 2 - 1, DLG_WINDOW_PALETTE_NUM, 0x13D);
         sStartMenuWindowId = AddWindow(&template);
         PutWindowTilemap(sStartMenuWindowId);
     }

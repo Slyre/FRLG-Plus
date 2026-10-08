@@ -29,6 +29,7 @@
 #include "berry_powder.h"
 #include "pokemon_jump.h"
 #include "event_scripts.h"
+#include "soul_link.h"
 
 // this file's functions
 static void ResetMiniGamesResults(void);
@@ -138,6 +139,7 @@ void NewGameInitData(void)
     gPlayerPartyCount = 0;
     ZeroPlayerPartyMons();
     ResetPokemonStorageSystem();
+    SoulLink_ResetSaveData();
     ClearRoamerData();
     gSaveBlock1Ptr->registeredItem = 0;
     ClearBag();

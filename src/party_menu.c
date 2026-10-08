@@ -1,4 +1,5 @@
 #include "global.h"
+#include "soul_link.h"
 #include "gflib.h"
 #include "battle.h"
 #include "battle_anim.h"
@@ -1157,6 +1158,14 @@ static s8 *GetCurrentPartySlotPtr(void)
 
 static void HandleChooseMonSelection(u8 taskId, s8 *slotPtr)
 {
+    if (gPartyMenu.menuType == PARTY_MENU_TYPE_DAYCARE && SoulLink_ArePartyChangesLocked())
+    {
+        static const u8 text[] = _("Change your team in SOUL LINK.");
+        PlaySE(SE_FAILURE);
+        DisplayPartyMenuMessage(text, TRUE);
+        gTasks[taskId].func = Task_ReturnToChooseMonAfterText;
+        return;
+    }
     if (*slotPtr == SLOT_CONFIRM)
         gPartyMenu.task(taskId); // task here is always Task_ValidateChosenMonsForBattle
     else

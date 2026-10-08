@@ -1,4 +1,6 @@
 #include "global.h"
+#include "soul_link.h"
+#include "soul_link_rules.h"
 #include "gflib.h"
 #include "data.h"
 #include "battle.h"
@@ -528,7 +530,8 @@ static u16 TakeSelectedPokemonFromDaycare(struct DaycareMon *daycareMon)
         ApplyDaycareExperience(&pokemon);
     }
 
-    if(CalculatePlayerPartyCount() != 6)
+    if(CalculatePlayerPartyCount() != 6 && !SoulLink_ArePartyChangesLocked()
+     && SoulLink_CanUseSpecies(&pokemon.box, species))
     {
         gSpecialVar_MonBoxId = 9999;
         gSpecialVar_MonBoxPos = 9999;
@@ -536,6 +539,7 @@ static u16 TakeSelectedPokemonFromDaycare(struct DaycareMon *daycareMon)
     }
     else //convert back to boxmon and send to box
     {
+       if (daycareMon->mail.message.itemId) return 9999;
        sentPC = SendMonToPC(&pokemon);
        if(sentPC == MON_CANT_GIVE)
        {
@@ -1086,6 +1090,12 @@ static void _GiveEggFromDaycare(struct DayCare *daycare)
 
     isEgg = TRUE;
     SetMonData(&egg, MON_DATA_IS_EGG, &isEgg);
+    if (SoulLink_IsEnabled())
+    {
+        if (GiveMonToPlayer(&egg) != MON_CANT_GIVE)
+            RemoveEggFromDayCare(daycare);
+        return;
+    }
     gPlayerParty[PARTY_SIZE - 1] = egg;
     CompactPartySlots();
     CalculatePlayerPartyCount();
@@ -1878,25 +1888,37 @@ static void AddHatchedMonToParty(u8 id)
     MonRestorePP(mon);
     CalculateMonStats(mon, FALSE);
 
-    if(gSaveBlock1Ptr->keyFlags.nuzlocke == 1)
     {
-        if(NuzlockeFlagGet(mapsecid))
-        {   // Already had an encounter where Egg was encountered
-            u16 zeroHP = 0;
-            SetMonData(mon, MON_DATA_HP, &zeroHP);
+        struct SoulLinkMonIdentity identity;
+        struct SoulLinkPair pair;
+        bool8 recorded;
+        identity.otId = GetMonData(mon, MON_DATA_OT_ID);
+        identity.personality = GetMonData(mon, MON_DATA_PERSONALITY);
+        identity.species = GetMonData(mon, MON_DATA_SPECIES);
+        identity.encounterOrdinal = 0;
+        recorded = SoulLink_IsEnabled() && SoulLink_FindLocalPair(&identity, NULL, &pair)
+            && pair.encounterStates[gSaveBlock2Ptr->soulLink.header.localPlayer] == SOUL_LINK_ENCOUNTER_CAPTURED;
+        // Receipt already committed this egg's encounter. Hatching is not a capture.
+        if(gSaveBlock1Ptr->keyFlags.nuzlocke == 1 && !recorded)
+        {
+            if(NuzlockeFlagGet(mapsecid))
+            {   // Already had an encounter where Egg was encountered
+                u16 zeroHP = 0;
+                SetMonData(mon, MON_DATA_HP, &zeroHP);
+            }
+            if(!IsWildMonNuzlockeDupe(GetMonData(mon, MON_DATA_SPECIES)))
+            {   // Set encounter flag where Egg was received if not a dupe
+                NuzlockeFlagSet(mapsecid);
+                if(GetMonData(mon, MON_DATA_HP) > 0)
+                    wasFirstCatch = TRUE; // only set dupe flag if not fainted
+            }
+            if(wasFirstCatch)
+            {   // set dupe flag if hatched mon is first of its species
+                SetNuzlockeDupeFlags(SpeciesToNationalPokedexNum(GetMonData(mon, MON_DATA_SPECIES)));
+            }
         }
-        if(!IsWildMonNuzlockeDupe(GetMonData(mon, MON_DATA_SPECIES)))
-        {   // Set encounter flag where Egg was received if not a dupe
-            NuzlockeFlagSet(mapsecid);
-            if(GetMonData(mon, MON_DATA_HP) > 0)
-                wasFirstCatch = TRUE; // only set dupe flag if not fainted
-        }
-        if(wasFirstCatch)
-        {   // set dupe flag if hatched mon is first of its species
-            SetNuzlockeDupeFlags(SpeciesToNationalPokedexNum(GetMonData(mon, MON_DATA_SPECIES)));
-        }
-    }
 
+    }
     CheckNationalDexEligibilityOnSaveLoad();
 }
 

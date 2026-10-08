@@ -1,4 +1,5 @@
 #include "global.h"
+#include "soul_link_local.h"
 #include "gflib.h"
 #include "battle.h"
 #include "battle_anim.h"
@@ -614,6 +615,7 @@ const u8 *const gStatusConditionStringsTable[][2] =
 void CB2_InitBattle(void)
 {
     MoveSaveBlocks_ResetHeap();
+    SoulLink_BeginBattle();
     AllocateBattleResources();
     AllocateBattleSpritesData();
     AllocateMonSpritesGfx();
@@ -4048,6 +4050,7 @@ static void ReturnFromBattleToOverworld(void)
     {
         gSpecialVar_Result = gBattleOutcome;
         gMain.inBattle = FALSE;
+        SoulLink_EndBattle();
         gMain.callback1 = gPreBattleCallback1;
         if (gBattleTypeFlags & BATTLE_TYPE_ROAMER)
         {

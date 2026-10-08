@@ -1,4 +1,5 @@
 #include "global.h"
+#include "soul_link_local.h"
 #include "gflib.h"
 #include "event_data.h"
 #include "field_fadetransition.h"
@@ -395,6 +396,7 @@ static void CreatePCMainMenu(u8 whichMenu, s16 *windowIdPtr)
 
 void CB2_ExitPokeStorage(void)
 {
+    SoulLink_RequestCleanup();
     sPreviousBoxOption = GetCurrentBoxOption();
     gFieldCallback = FieldTask_ReturnToPcMenu;
     SetMainCallback2(CB2_ReturnToField);

@@ -1,6 +1,9 @@
 #define IS_POKEMON_C
 
 #include "global.h"
+#include "soul_link_local.h"
+#include "soul_link_rules.h"
+#include "soul_link.h"
 #include "gflib.h"
 #include "random.h"
 #include "text.h"
@@ -4335,7 +4338,7 @@ u32 GetMonData(struct Pokemon *mon, s32 field, u8 *data)
         ret = mon->level;
         break;
     case MON_DATA_HP:
-        ret = mon->hp;
+        ret = SoulLink_IsBoxMonDead(&mon->box) ? 0 : mon->hp;
         break;
     case MON_DATA_MAX_HP:
         ret = mon->maxHP;
@@ -4752,6 +4755,8 @@ u32 GetBoxMonData(struct BoxPokemon *boxMon, s32 field, u8 *data)
     if (field > MON_DATA_ENCRYPT_SEPARATOR)
         EncryptBoxMon(boxMon);
 
+    if (field == MON_DATA_BOX_HP && SoulLink_IsBoxMonDead(boxMon))
+        return 0;
     return retVal;
 }
 
@@ -4772,7 +4777,10 @@ void SetMonData(struct Pokemon *mon, s32 field, const void *dataArg)
         SET8(mon->level);
         break;
     case MON_DATA_HP:
-        SET16(mon->hp);
+        if (SoulLink_IsBoxMonDead(&mon->box))
+            mon->hp = 0;
+        else
+            SET16(mon->hp);
         break;
     case MON_DATA_MAX_HP:
         SET16(mon->maxHP);
@@ -5128,6 +5136,8 @@ u8 GiveMonToPlayer(struct Pokemon *mon)
     SetMonData(mon, MON_DATA_OT_NAME, gSaveBlock2Ptr->playerName);
     SetMonData(mon, MON_DATA_OT_GENDER, &gSaveBlock2Ptr->playerGender);
     SetMonData(mon, MON_DATA_OT_ID, gSaveBlock2Ptr->playerTrainerId);
+    if (!SoulLink_PrepareAcquisition(mon))
+        return MON_CANT_GIVE;
 
     for (i = 0; i < PARTY_SIZE; i++)
     {
@@ -5135,12 +5145,17 @@ u8 GiveMonToPlayer(struct Pokemon *mon)
             break;
     }
 
-    if (i >= PARTY_SIZE)
-        return SendMonToPC(mon);
+    if (i >= PARTY_SIZE || SoulLink_ArePartyChangesLocked())
+    {
+        u8 result = SendMonToPC(mon);
+        SoulLink_FinishAcquisition(mon, result);
+        return result;
+    }
 
     CopyMon(&gPlayerParty[i], mon, sizeof(*mon));
     CalculateMonStats(&gPlayerParty[i], FALSE);
     gPlayerPartyCount = i + 1;
+    SoulLink_FinishAcquisition(mon, MON_GIVEN_TO_PARTY);
     return MON_GIVEN_TO_PARTY;
 }
 
@@ -5154,7 +5169,7 @@ u8 SendMonToPC(struct Pokemon* mon)
 
     do
     {
-        for (boxPos = 0; boxPos < IN_BOX_COUNT; boxPos++)
+        for (boxPos = 0; !SoulLink_IsGraveBox(boxNo) && boxPos < IN_BOX_COUNT; boxPos++)
         {
             struct BoxPokemon* checkingMon = GetBoxedMonPtr(boxNo, boxPos);
             if (GetBoxMonData(checkingMon, MON_DATA_SPECIES, NULL) == SPECIES_NONE)
@@ -5716,7 +5731,7 @@ bool8 PokemonUseItemEffects(struct Pokemon *mon, u16 item, u8 partyIndex, u8 mov
                         // If Revive, update number of times revive has been used
                         if (val & (ITEM4_REVIVE >> 2))
                         {
-                            if (gSaveBlock1Ptr->keyFlags.nuzlocke == 1 || GetMonData(mon, MON_DATA_HP, NULL) != 0)
+                            if (gSaveBlock1Ptr->keyFlags.nuzlocke == 1 || SoulLink_IsBoxMonDead(&mon->box) || GetMonData(mon, MON_DATA_HP, NULL) != 0)
                             {
                                 idx++;
                                 break;
@@ -6188,7 +6203,7 @@ bool8 PokemonItemUseNoEffect(struct Pokemon *mon, u16 item, u8 partyIndex, u8 mo
                     case 2: // ITEM4_HEAL_HP
                         if (curEffect & (ITEM4_REVIVE >> 2))
                         {
-                            if (gSaveBlock1Ptr->keyFlags.nuzlocke == 1 || GetMonData(mon, MON_DATA_HP, NULL) != 0)
+                            if (gSaveBlock1Ptr->keyFlags.nuzlocke == 1 || SoulLink_IsBoxMonDead(&mon->box) || GetMonData(mon, MON_DATA_HP, NULL) != 0)
                             {
                                 idx++;
                                 break;
@@ -6623,6 +6638,8 @@ u16 GetEvolutionTargetSpecies(struct Pokemon *mon, u8 type, u16 evolutionItem)
         break;
     }
 
+    if (targetSpecies != SPECIES_NONE && SoulLink_IsPartyMon(mon)
+     && !SoulLink_CanUseSpecies(&mon->box, targetSpecies)) targetSpecies = SPECIES_NONE;
     return targetSpecies;
 }
 

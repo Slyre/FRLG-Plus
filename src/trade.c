@@ -1,4 +1,5 @@
 #include "global.h"
+#include "soul_link.h"
 #include "gflib.h"
 #include "task.h"
 #include "decompress.h"
@@ -2735,6 +2736,8 @@ static u32 CanTradeSelectedMon(struct Pokemon * playerParty, int partyCount, int
         species[i] = GetMonData(&playerParty[i], MON_DATA_SPECIES);
     }
 
+    if (SoulLink_ArePartyChangesLocked()) return CANT_TRADE_INVALID_MON;
+
     // Prevents trading species higher than Gen 3's max
     if (species2[monIdx] > SPECIES_EGG)
         return CANT_TRADE_INVALID_MON;
@@ -2839,6 +2842,8 @@ int GetUnionRoomTradeMessageId(struct RfuGameCompatibilityData player, struct Rf
     bool8 partnerCanLinkNationally = partner.canLinkNationally;
     u8 partnerVersion = partner.version;
     bool8 isNotFRLG;
+
+    if (SoulLink_ArePartyChangesLocked()) return UR_TRADE_MSG_MON_CANT_BE_TRADED_2;
 
     if (partnerVersion == VERSION_FIRE_RED || partnerVersion == VERSION_LEAF_GREEN)
         isNotFRLG = FALSE;

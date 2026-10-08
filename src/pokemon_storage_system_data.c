@@ -1,4 +1,6 @@
 #include "global.h"
+#include "soul_link.h"
+#include "soul_link_rules.h"
 #include "gflib.h"
 #include "data.h"
 #include "item.h"
@@ -2375,4 +2377,18 @@ void RemoveMenu(void)
 {
     ClearStdWindowAndFrameToTransparent(gStorage->menuWindowId, TRUE);
     RemoveWindow(gStorage->menuWindowId);
+}
+
+// Checked before grabbing a body or starting a storage animation.
+bool8 SoulLink_CanChangeStorageParty(bool8 withdraw)
+{
+    struct BoxPokemon *incoming = NULL;
+    bool8 partyTarget = sCursorArea == CURSOR_AREA_IN_PARTY;
+    if (SoulLink_ArePartyChangesLocked() && (withdraw || partyTarget
+     || (sIsMonBeingMoved && GetMovingMonOriginalBoxId() == TOTAL_BOXES_COUNT))) return FALSE;
+    if (withdraw && sCursorArea == CURSOR_AREA_IN_BOX)
+        incoming = GetBoxedMonPtr(StorageGetCurrentBox(), sCursorPosition);
+    else if (partyTarget && sIsMonBeingMoved)
+        incoming = &gStorage->movingMon.box;
+    return incoming == NULL || SoulLink_CanUseSpecies(incoming, GetBoxMonData(incoming, MON_DATA_SPECIES, NULL));
 }

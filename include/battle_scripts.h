@@ -2,6 +2,8 @@
 #define GUARD_BATTLE_SCRIPTS_H
 
 #include "global.h"
+extern const u8 BattleScript_SoulLinkCaptureBlocked[];
+extern const u8 BattleScript_SoulLinkAcquisitionFailed[];
 
 extern const u8 BattleScript_HitFromCritCalc[];
 extern const u8 BattleScript_MoveEnd[];

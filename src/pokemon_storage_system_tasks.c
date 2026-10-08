@@ -38,6 +38,7 @@ static void Task_InitPokeStorage(u8 taskId);
 static void Task_ShowPokeStorage(u8 taskId);
 static void Task_ReshowPokeStorage(u8 taskId);
 static void Task_PokeStorageMain(u8 taskId);
+static void Task_SoulLinkStorageDenied(u8 taskId);
 static void Task_ShowPartyPokemon(u8 taskId);
 static void Task_HidePartyPokemon(u8 taskId);
 static void Task_OnSelectedMon(u8 taskId);
@@ -135,6 +136,7 @@ enum
     MSG_BYE_BYE,
     MSG_MARK_POKE,
     MSG_LAST_POKE,
+    MSG_SOUL_LINK,
     MSG_PARTY_FULL,
     MSG_HOLDING_POKE,
     MSG_WHICH_ONE_WILL_TAKE,
@@ -166,6 +168,7 @@ enum
     MSG_FMT_ITEM_NAME,
 };
 
+static const u8 sSoulLinkStorageRules[] = _("SOUL LINK rules.\nCheck team or types.");
 static const u32 sScrollingBg_Gfx[]     = INCBIN_U32("graphics/pokemon_storage/scrolling_bg.4bpp.lz");
 static const u32 sScrollingBg_Tilemap[] = INCBIN_U32("graphics/pokemon_storage/scrolling_bg.bin.lz");
 
@@ -286,6 +289,7 @@ static const struct StorageMessage sMessages[] = {
     [MSG_WAS_RELEASED]         = {gText_PkmnWasReleased,         MSG_FMT_RELEASE_MON_1},
     [MSG_BYE_BYE]              = {gText_ByeByePkmn,              MSG_FMT_RELEASE_MON_3},
     [MSG_MARK_POKE]            = {gText_MarkYourPkmn,            MSG_FMT_NONE},
+    [MSG_SOUL_LINK] = {sSoulLinkStorageRules, MSG_FMT_NONE},
     [MSG_LAST_POKE]            = {gText_ThatsYourLastPkmn,       MSG_FMT_NONE},
     [MSG_PARTY_FULL]           = {gText_YourPartysFull,          MSG_FMT_NONE},
     [MSG_HOLDING_POKE]         = {gText_YoureHoldingAPkmn,       MSG_FMT_NONE},
@@ -718,6 +722,12 @@ static void Task_PokeStorageMain(u8 taskId)
             }
             break;
         case INPUT_DEPOSIT:
+            if (!SoulLink_CanChangeStorageParty(FALSE))
+            {
+                ClearBottomWindow();
+                SetPokeStorageTask(Task_SoulLinkStorageDenied);
+                break;
+            }
             if (!CanMovePartyMon())
             {
                 if (ItemIsMail(gStorage->displayMonItemId))
@@ -732,6 +742,12 @@ static void Task_PokeStorageMain(u8 taskId)
                 gStorage->state = 4;
             break;
         case INPUT_MOVE_MON:
+            if (!SoulLink_CanChangeStorageParty(FALSE))
+            {
+                ClearBottomWindow();
+                SetPokeStorageTask(Task_SoulLinkStorageDenied);
+                break;
+            }
             if (CanMovePartyMon())
                 gStorage->state = 4;
 
@@ -742,6 +758,12 @@ static void Task_PokeStorageMain(u8 taskId)
             }
             break;
         case INPUT_SHIFT_MON:
+            if (!SoulLink_CanChangeStorageParty(FALSE))
+            {
+                ClearBottomWindow();
+                SetPokeStorageTask(Task_SoulLinkStorageDenied);
+                break;
+            }
             if (!CanShiftMon())
                 gStorage->state = 4;
             else
@@ -751,10 +773,22 @@ static void Task_PokeStorageMain(u8 taskId)
             }
             break;
         case INPUT_WITHDRAW:
+            if (!SoulLink_CanChangeStorageParty(TRUE))
+            {
+                ClearBottomWindow();
+                SetPokeStorageTask(Task_SoulLinkStorageDenied);
+                break;
+            }
             PlaySE(SE_SELECT);
             SetPokeStorageTask(Task_WithdrawMon);
             break;
         case INPUT_PLACE_MON:
+            if (!SoulLink_CanChangeStorageParty(FALSE))
+            {
+                ClearBottomWindow();
+                SetPokeStorageTask(Task_SoulLinkStorageDenied);
+                break;
+            }
             PlaySE(SE_SELECT);
             SetPokeStorageTask(Task_PlaceMon);
             break;
@@ -964,6 +998,12 @@ static void Task_OnSelectedMon(u8 taskId)
             SetPokeStorageTask(Task_PokeStorageMain);
             break;
         case MENU_TEXT_MOVE:
+            if (!SoulLink_CanChangeStorageParty(FALSE))
+            {
+                ClearBottomWindow();
+                SetPokeStorageTask(Task_SoulLinkStorageDenied);
+                break;
+            }
             if (CanMovePartyMon())
                 gStorage->state = 3;
             else
@@ -974,11 +1014,23 @@ static void Task_OnSelectedMon(u8 taskId)
             }
             break;
         case MENU_TEXT_PLACE:
+            if (!SoulLink_CanChangeStorageParty(FALSE))
+            {
+                ClearBottomWindow();
+                SetPokeStorageTask(Task_SoulLinkStorageDenied);
+                break;
+            }
             PlaySE(SE_SELECT);
             ClearBottomWindow();
             SetPokeStorageTask(Task_PlaceMon);
             break;
         case MENU_TEXT_SHIFT:
+            if (!SoulLink_CanChangeStorageParty(FALSE))
+            {
+                ClearBottomWindow();
+                SetPokeStorageTask(Task_SoulLinkStorageDenied);
+                break;
+            }
             if (!CanShiftMon())
                 gStorage->state = 3;
             else
@@ -989,11 +1041,23 @@ static void Task_OnSelectedMon(u8 taskId)
             }
             break;
         case MENU_TEXT_WITHDRAW:
+            if (!SoulLink_CanChangeStorageParty(TRUE))
+            {
+                ClearBottomWindow();
+                SetPokeStorageTask(Task_SoulLinkStorageDenied);
+                break;
+            }
             PlaySE(SE_SELECT);
             ClearBottomWindow();
             SetPokeStorageTask(Task_WithdrawMon);
             break;
         case MENU_TEXT_STORE:
+            if (!SoulLink_CanChangeStorageParty(FALSE))
+            {
+                ClearBottomWindow();
+                SetPokeStorageTask(Task_SoulLinkStorageDenied);
+                break;
+            }
             if (CanMovePartyMon())
                 gStorage->state = 3;
             else if (ItemIsMail(gStorage->displayMonItemId))
@@ -1006,6 +1070,12 @@ static void Task_OnSelectedMon(u8 taskId)
             }
             break;
         case MENU_TEXT_RELEASE:
+            if (!SoulLink_CanChangeStorageParty(FALSE))
+            {
+                ClearBottomWindow();
+                SetPokeStorageTask(Task_SoulLinkStorageDenied);
+                break;
+            }
             if (CanMovePartyMon())
                 gStorage->state = 3;
             else if (gStorage->displayMonIsEgg)
@@ -2766,5 +2836,20 @@ static void UpdateBoxToSendMons(void)
     {
         FlagClear(FLAG_SHOWN_BOX_WAS_FULL_MESSAGE);
         VarSet(VAR_PC_BOX_TO_SEND_MON, StorageGetCurrentBox());
+    }
+}
+
+static void Task_SoulLinkStorageDenied(u8 taskId)
+{
+    if (gStorage->state == 0)
+    {
+        PlaySE(SE_FAILURE);
+        PrintStorageMessage(MSG_SOUL_LINK);
+        gStorage->state = 1;
+    }
+    else if (JOY_NEW(A_BUTTON | B_BUTTON))
+    {
+        ClearBottomWindow();
+        SetPokeStorageTask(Task_PokeStorageMain);
     }
 }

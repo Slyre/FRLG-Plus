@@ -1,3 +1,4 @@
+#include "soul_link_companion.h"
 #include "global.h"
 #include "gflib.h"
 #include "link.h"
@@ -154,6 +155,7 @@ void AgbMain()
 
     for (;;)
     {
+        SoulLink_CompanionUpdate();
         ReadKeys();
 
         if (gSoftResetDisabled == FALSE

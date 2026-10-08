@@ -34,6 +34,7 @@
 #include "option_menu.h"
 #include "save_menu_util.h"
 #include "help_system.h"
+#include "soul_link_menu.h"
 #include "constants/songs.h"
 #include "constants/field_weather.h"
 
@@ -48,6 +49,7 @@ enum StartMenuOption
     STARTMENU_EXIT,
     STARTMENU_RETIRE,
     STARTMENU_PLAYER2,
+    STARTMENU_SOUL_LINK,
     MAX_STARTMENU_ITEMS
 };
 
@@ -84,6 +86,7 @@ static bool8 StartMenuBagCallback(void);
 static bool8 StartMenuPlayerCallback(void);
 static bool8 StartMenuSaveCallback(void);
 static bool8 StartMenuOptionCallback(void);
+static bool8 StartMenuSoulLinkCallback(void);
 static bool8 StartMenuExitCallback(void);
 static bool8 StartMenuSafariZoneRetireCallback(void);
 static bool8 StartMenuLinkPlayerCallback(void);
@@ -112,6 +115,9 @@ static void PrintSaveStats(void);
 static void CloseSaveStatsWindow(void);
 static void CloseStartMenu(void);
 
+static const u8 sText_SoulLink[] = _("SOUL LINK");
+static const u8 sDesc_SoulLink[] = _("Rules, duo overview and\nSOUL LINK diagnostics.");
+
 static const struct MenuAction sStartMenuActionTable[] = {
     { gText_MenuPokedex, {.u8_void = StartMenuPokedexCallback} },
     { gText_MenuPokemon, {.u8_void = StartMenuPokemonCallback} },
@@ -121,7 +127,8 @@ static const struct MenuAction sStartMenuActionTable[] = {
     { gText_MenuOption, {.u8_void = StartMenuOptionCallback} },
     { gText_MenuExit, {.u8_void = StartMenuExitCallback} },
     { gText_MenuRetire, {.u8_void = StartMenuSafariZoneRetireCallback} },
-    { gText_MenuPlayer, {.u8_void = StartMenuLinkPlayerCallback} }
+    { gText_MenuPlayer, {.u8_void = StartMenuLinkPlayerCallback} },
+    { sText_SoulLink, {.u8_void = StartMenuSoulLinkCallback} }
 };
 
 static const struct WindowTemplate sSafariZoneStatsWindowTemplate = {
@@ -143,7 +150,8 @@ static const u8 *const sStartMenuDescPointers[] = {
     gStartMenuDesc_Option,
     gStartMenuDesc_Exit,
     gStartMenuDesc_Retire,
-    gStartMenuDesc_Player
+    gStartMenuDesc_Player,
+    sDesc_SoulLink
 };
 
 static const struct BgTemplate sBGTemplates_AfterLinkSaveMessage[] = {
@@ -219,6 +227,7 @@ static void SetUpStartMenu_NormalField(void)
     AppendToStartMenuItems(STARTMENU_PLAYER);
     AppendToStartMenuItems(STARTMENU_SAVE);
     AppendToStartMenuItems(STARTMENU_OPTION);
+    AppendToStartMenuItems(STARTMENU_SOUL_LINK);
     AppendToStartMenuItems(STARTMENU_EXIT);
 }
 
@@ -274,6 +283,11 @@ static void DestroySafariZoneStatsWindow(void)
     }
 }
 
+static u8 GetStartMenuRowHeight(void)
+{
+    return sNumStartMenuItems == 8 ? 13 : 15;
+}
+
 static s8 PrintStartMenuItems(s8 *cursor_p, u8 nitems)
 {
     s16 i = *cursor_p;
@@ -281,12 +295,12 @@ static s8 PrintStartMenuItems(s8 *cursor_p, u8 nitems)
     {
         if (sStartMenuOrder[i] == STARTMENU_PLAYER || sStartMenuOrder[i] == STARTMENU_PLAYER2)
         {
-            Menu_PrintFormatIntlPlayerName(GetStartMenuWindowId(), sStartMenuActionTable[sStartMenuOrder[i]].text, 8, i * 15);
+            Menu_PrintFormatIntlPlayerName(GetStartMenuWindowId(), sStartMenuActionTable[sStartMenuOrder[i]].text, 8, i * GetStartMenuRowHeight());
         }
         else
         {
             StringExpandPlaceholders(gStringVar4, sStartMenuActionTable[sStartMenuOrder[i]].text);
-            AddTextPrinterParameterized(GetStartMenuWindowId(), FONT_NORMAL, gStringVar4, 8, i * 15, 0xFF, NULL);
+            AddTextPrinterParameterized(GetStartMenuWindowId(), FONT_NORMAL, gStringVar4, 8, i * GetStartMenuRowHeight(), 0xFF, NULL);
         }
         i++;
         if (i >= sNumStartMenuItems)
@@ -325,7 +339,7 @@ static s8 DoDrawStartMenu(void)
             sDrawStartMenuState[0]++;
         break;
     case 5:
-        sStartMenuCursorPos = Menu_InitCursor(GetStartMenuWindowId(), FONT_NORMAL, 0, 0, 15, sNumStartMenuItems, sStartMenuCursorPos);
+        sStartMenuCursorPos = Menu_InitCursor(GetStartMenuWindowId(), FONT_NORMAL, 0, 0, GetStartMenuRowHeight(), sNumStartMenuItems, sStartMenuCursorPos);
         if (!MenuHelpers_IsLinkActive() && InUnionRoom() != TRUE && gSaveBlock2Ptr->optionsButtonMode == OPTIONS_BUTTON_MODE_HELP)
         {
             DrawHelpMessageWindowWithText(sStartMenuDescPointers[sStartMenuOrder[sStartMenuCursorPos]]);
@@ -529,6 +543,19 @@ static bool8 StartMenuOptionCallback(void)
         CleanupOverworldWindowsAndTilemaps();
         SetMainCallback2(CB2_OptionsMenuFromStartMenu);
         gMain.savedCallback = CB2_ReturnToFieldWithOpenMenu;
+        return TRUE;
+    }
+    return FALSE;
+}
+
+static bool8 StartMenuSoulLinkCallback(void)
+{
+    if (!gPaletteFade.active)
+    {
+        PlayRainStoppingSoundEffect();
+        DestroySafariZoneStatsWindow();
+        CleanupOverworldWindowsAndTilemaps();
+        SetMainCallback2(CB2_SoulLinkMenu);
         return TRUE;
     }
     return FALSE;

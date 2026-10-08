@@ -1,4 +1,5 @@
 #include "global.h"
+#include "soul_link_local.h"
 #include "gflib.h"
 #include "strings.h"
 #include "task.h"
@@ -105,6 +106,8 @@ s32 DoPoisonFieldEffect(void)
             if (hp == 0 || --hp == 0)
                 numFainted++;
             SetMonData(pokemon, MON_DATA_HP, &hp);
+            if (hp == 0)
+                SoulLink_RecordMonDeath(pokemon);
             numPoisoned++;
         }
         pokemon++;

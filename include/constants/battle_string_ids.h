@@ -388,7 +388,9 @@
 #define STRINGID_PICKUP 387
 #define STRINGID_PICKUPSOLO 388
 
-#define BATTLESTRINGS_COUNT     389
+#define STRINGID_SOULLINKCAPTUREBLOCKED 389
+#define STRINGID_SOULLINKACQUISITIONFAILED 390
+#define BATTLESTRINGS_COUNT     391
 
 // This is the string id that gBattleStringsTable starts with.
 // String ids before this (e.g. STRINGID_INTROMSG) are not in the table,

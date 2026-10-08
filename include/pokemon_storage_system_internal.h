@@ -505,6 +505,7 @@ void InitMonPlaceChange(u8 type);
 bool8 IsActiveItemMoving(void);
 bool8 IsCursorOnCloseBox(void);
 bool8 IsMonBeingMoved(void);
+bool8 SoulLink_CanChangeStorageParty(bool8 withdraw);
 void Item_FromMonToMoving(u8 cursorArea, u8 cursorPos);
 void Item_GiveMovingToMon(u8 cursorArea, u8 cursorPos);
 void Item_SwitchMonsWithMoving(u8 cursorArea, u8 cursorPos);

@@ -526,7 +526,11 @@ const u8 gText_HowDissapointing[] = _("OAK: Hm…\nHow disappointing…\pIf you 
 const u8 gText_GrandMaster[] = _("GRAND MASTER ");
 const u8 gText_Master[] = _(" MASTER ");
 
+static const u8 sText_SoulLinkCaptureBlocked[] = _("Soul Link rules or record limits\nprevent this capture.");
+static const u8 sText_SoulLinkAcquisitionFailed[] = _("No room or identity conflict.\nThe POKéMON was not acquired.");
 const u8 *const gBattleStringsTable[BATTLESTRINGS_COUNT - BATTLESTRINGS_TABLE_START] = {
+    [STRINGID_SOULLINKCAPTUREBLOCKED - BATTLESTRINGS_TABLE_START] = sText_SoulLinkCaptureBlocked,
+    [STRINGID_SOULLINKACQUISITIONFAILED - BATTLESTRINGS_TABLE_START] = sText_SoulLinkAcquisitionFailed,
     [STRINGID_TRAINER1LOSETEXT - BATTLESTRINGS_TABLE_START]              = sText_Trainer1LoseText,
     [STRINGID_PKMNGAINEDEXP - BATTLESTRINGS_TABLE_START]                 = sText_PkmnGainedEXP,
     [STRINGID_PKMNGREWTOLV - BATTLESTRINGS_TABLE_START]                  = sText_PkmnGrewToLv,

@@ -1,4 +1,6 @@
 #include "global.h"
+#include "soul_link_local.h"
+#include "nuzlocke.h"
 #include "gflib.h"
 #include "bg_regs.h"
 #include "cable_club.h"
@@ -1578,12 +1580,21 @@ void CB2_OverworldBasic(void)
     OverworldBasic();
 }
 
+bool8 IsOverworldIdle(void)
+{
+    return gMain.callback2 == CB2_Overworld && !gPaletteFade.active && !gMain.inBattle
+        && !ArePlayerFieldControlsLocked() && !ScriptContext_IsEnabled()
+        && !QL_IS_PLAYBACK_STATE && IsFieldMessageBoxHidden();
+}
+
 static void CB2_Overworld(void)
 {
     bool32 fading = !!gPaletteFade.active;
     if (fading)
         SetVBlankCallback(NULL);
     OverworldBasic();
+    if (IsOverworldIdle() && !fading)
+        SoulLink_ProcessField();
     if (fading)
         SetFieldVBlankCallback();
 }
@@ -1655,7 +1666,7 @@ void CB2_WhiteOut(void)
         UnlockPlayerFieldControls();
         gFieldCallback = FieldCB_RushInjuredPokemonToCenter;
         val = 0;
-        if(gSaveBlock1Ptr->keyFlags.nuzlocke == 1 || gSaveBlock1Ptr->keyFlags.noPMC == 1)
+        if(Nuzlocke_HasPermanentDeaths() || gSaveBlock1Ptr->keyFlags.noPMC == 1)
         {
             if(GetFirstAliveBoxMon() == 420) //no usable Pokemon
             {

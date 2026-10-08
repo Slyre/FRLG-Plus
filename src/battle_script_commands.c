@@ -1,4 +1,6 @@
 #include "global.h"
+#include "soul_link.h"
+#include "soul_link_local.h"
 #include "gflib.h"
 #include "item.h"
 #include "util.h"
@@ -2902,6 +2904,7 @@ static void Cmd_tryfaintmon(void)
             if (GetBattlerSide(gActiveBattler) == B_SIDE_PLAYER)
             {
                 gHitMarker |= HITMARKER_PLAYER_FAINTED;
+                SoulLink_RecordBattleDeath(gBattlerPartyIndexes[gActiveBattler]);
                 if (gBattleResults.playerFaintCounter < 255)
                     gBattleResults.playerFaintCounter++;
                 AdjustFriendshipOnBattleFaint(gActiveBattler);
@@ -9584,6 +9587,12 @@ static void Cmd_handleballthrow(void)
         MarkBattlerForControllerExec(gActiveBattler);
         gBattlescriptCurrInstr = BattleScript_OldMan_Pokedude_CaughtMessage;
     }
+    else if (!SoulLink_PrepareAcquisition(&gEnemyParty[gBattlerPartyIndexes[gBattlerTarget]]))
+    {
+        BtlController_EmitBallThrowAnim(BUFFER_A, 0);
+        MarkBattlerForControllerExec(gActiveBattler);
+        gBattlescriptCurrInstr = BattleScript_SoulLinkCaptureBlocked;
+    }
     else
     {
         u32 odds;
@@ -9668,12 +9677,12 @@ static void Cmd_handleballthrow(void)
         {
             BtlController_EmitBallThrowAnim(0, BALL_3_SHAKES_SUCCESS);
             MarkBattlerForControllerExec(gActiveBattler);
-            if(gSaveBlock1Ptr->keyFlags.nuzlocke == 1)
+            if(gSaveBlock1Ptr->keyFlags.nuzlocke == 1 && !SoulLink_IsEnabled())
                 gBattlescriptCurrInstr = BattleScript_SuccessBallThrowForceNick;
             else 
                 gBattlescriptCurrInstr = BattleScript_SuccessBallThrow;
             SetMonData(&gEnemyParty[gBattlerPartyIndexes[gBattlerTarget]], MON_DATA_POKEBALL, &gLastUsedItem);
-            if(gSaveBlock1Ptr->keyFlags.nuzlocke == 1)
+            if(gSaveBlock1Ptr->keyFlags.nuzlocke == 1 && !SoulLink_IsEnabled())
             {
                 if(NuzlockeFlagGet(GetCurrentRegionMapSectionId()) == TRUE) //already caught something here, faint mon
                 {
@@ -9728,12 +9737,12 @@ static void Cmd_handleballthrow(void)
 
             if (shakes == BALL_3_SHAKES_SUCCESS) // mon caught, copy of the code above
             {
-                if(gSaveBlock1Ptr->keyFlags.nuzlocke == 1)
+                if(gSaveBlock1Ptr->keyFlags.nuzlocke == 1 && !SoulLink_IsEnabled())
                     gBattlescriptCurrInstr = BattleScript_SuccessBallThrowForceNick;
                 else 
                     gBattlescriptCurrInstr = BattleScript_SuccessBallThrow;
                 SetMonData(&gEnemyParty[gBattlerPartyIndexes[gBattlerTarget]], MON_DATA_POKEBALL, &gLastUsedItem);
-                if(gSaveBlock1Ptr->keyFlags.nuzlocke == 1)
+                if(gSaveBlock1Ptr->keyFlags.nuzlocke == 1 && !SoulLink_IsEnabled())
                 {
                     if(NuzlockeFlagGet(GetCurrentRegionMapSectionId()) == TRUE) //already caught something here, faint mon
                     {
@@ -9782,7 +9791,13 @@ static void Cmd_handleballthrow(void)
 
 static void Cmd_givecaughtmon(void)
 {
-    if (GiveMonToPlayer(&gEnemyParty[gBattlerPartyIndexes[gBattlerAttacker ^ BIT_SIDE]]) != MON_GIVEN_TO_PARTY)
+    u8 result = GiveMonToPlayer(&gEnemyParty[gBattlerPartyIndexes[gBattlerAttacker ^ BIT_SIDE]]);
+    if (result == MON_CANT_GIVE)
+    {
+        gBattlescriptCurrInstr = BattleScript_SoulLinkAcquisitionFailed;
+        return;
+    }
+    if (result == MON_GIVEN_TO_PC)
     {
         if (!ShouldShowBoxWasFullMessage())
         {

@@ -1,4 +1,5 @@
 #include "global.h"
+#include "soul_link.h"
 #include "gflib.h"
 #include "battle_setup.h"
 #include "berry.h"
@@ -114,7 +115,7 @@ u8 ScriptGiveMon(u16 species, u8 level, u16 item, u32 unused1, u32 unused2, u8 u
     heldItem[0] = item;
     heldItem[1] = item >> 8;
     SetMonData(mon, MON_DATA_HELD_ITEM, heldItem);
-    if(gSaveBlock1Ptr->keyFlags.nuzlocke == 1 && !IN_OAKS_LAB) //if this is Oak's Lab, don't set Nuzlocke flags
+    if(gSaveBlock1Ptr->keyFlags.nuzlocke == 1 && !SoulLink_IsEnabled() && !IN_OAKS_LAB) // Soul Link commits quota only after acquisition succeeds.
     {
         if(NuzlockeFlagGet(GetCurrentRegionMapSectionId()) == TRUE) //already caught something here, faint mon
         {

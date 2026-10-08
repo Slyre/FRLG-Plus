@@ -1,4 +1,5 @@
 #include "global.h"
+#include "soul_link.h"
 #include "gflib.h"
 #include "battle.h"
 #include "battle_message.h"
@@ -550,7 +551,8 @@ static void CB2_TradeEvolutionSceneUpdate(void)
 static void CreateShedinja(u16 preEvoSpecies, struct Pokemon* mon)
 {
     u32 data = 0;
-    if (gEvolutionTable[preEvoSpecies][0].method == EVO_LEVEL_NINJASK && gPlayerPartyCount < PARTY_SIZE)
+    // The bonus has no encounter or partner; one capture remains one pair.
+    if (!SoulLink_IsEnabled() && gEvolutionTable[preEvoSpecies][0].method == EVO_LEVEL_NINJASK && gPlayerPartyCount < PARTY_SIZE)
     {
         s32 i;
         struct Pokemon* shedinja = &gPlayerParty[gPlayerPartyCount];

@@ -3,6 +3,7 @@
 
 #include "config.h"
 #include "gba/gba.h"
+#include "soul_link_types.h"
 #include <string.h>
 #include "constants/global.h"
 #include "constants/flags.h"
@@ -355,7 +356,7 @@ struct SaveBlock2
     /*0xAF0*/ struct BerryCrush berryCrush;
     /*0xB00*/ struct PokemonJumpRecords pokeJump;
     /*0xB10*/ struct BerryPickingResults berryPick;
-    /*0xB20*/ u8 filler_B20[0x400];
+    /*0xB20*/ struct SoulLinkSave soulLink;
     /*0xF20*/ u32 encryptionKey;
 }; // size: 0xF24
 
@@ -797,7 +798,8 @@ struct SaveBlock1
                u8 bagPocket_KeyItems[BAG_KEYITEMS_COUNT]; // stripped to one byte indices, 36 slots now for all legal FRLG Key Items at once + 2 more for cheaters/alignment.
                struct ItemSlot bagPocket_Medicine[BAG_MEDICINE_COUNT];
                struct ItemSlot bagPocket_HoldItems[BAG_HELD_ITEMS_COUNT];
-               u8 leftoverItemSlots[92]; //padding to prevent shifting the saveblock, Berry Pocket was moved elsewhere
+               struct SoulLinkPair soulLinkItemReservePairs[2];
+               u8 leftoverItemSlots[28]; // remaining padding from the relocated Berry Pocket
     /*0x05F8*/ u8 seen1[52]; //made unreferenced & can be gotten rid of, though PKHeX presumably will still set this
     /*0x062C*/ u8 filler_062C[5]; // unused; was berryBlenderRecords which was obviously unused
                u8 masterTrainerTitle; // 0 is none, 152 is Grandmaster, 1-151 is {Kanto species} Master
@@ -817,8 +819,9 @@ struct SaveBlock1
     /*0x2CC4*/ u16 easyChatBattleLost[EASY_CHAT_BATTLE_WORDS_COUNT]; //referred to, but functionally unused
     /*0x2CD0*/ struct Mail mail[MAIL_COUNT];
     /*0x2F10*/ u8 additionalPhrases[NUM_ADDITIONAL_PHRASE_BYTES];
-    /*0x2F18*/ u8 filler_oldMan[64]; // unused, was struct OldMan oldMan
-    /*0x2F54*/ u8 filler_EasyChatPairs[36]; // unused, was struct DewfordTrend dewfordTrends[5], which was 40 bytes, but I had to add 2 bytes to the Daycare struct (which got padded to 4).
+    /*0x2F18*/ struct SoulLinkPair soulLinkOldManReservePairs[2];
+    /*0x2F54*/ struct SoulLinkPair soulLinkEasyChatReservePairs[1];
+               u8 filler_EasyChatPairs[4];
     /*0x2F80*/ struct DayCare daycare;
     /*0x309C*/ u8 giftRibbons[GIFT_RIBBONS_COUNT];
     /*0x30A7*/ struct ExternalEventData externalEventData;
@@ -826,7 +829,8 @@ struct SaveBlock1
     /*0x30D0*/ struct Roamer roamer;
     /*0x30EC*/ struct EnigmaBerry enigmaBerry;
     /*0x3120*/ struct MysteryGiftSave mysteryGift; //0x36C in length
-    /*0x348C*/ u8 unused_348C[176];
+    /*0x348C*/ struct SoulLinkPair soulLinkFreeWorkPairs[5];
+               u8 unused_348C[16];
     //^^^this & the mysteryEventBuffers field are labeled "FreeWork" & combined in the source, though 0x36C of FreeWork is set aside for MEventBuffers in mevent.c,
     //^^^which is likely where the above field was documented from. The rest of FreeWork is unreferenced in the source, so this field is likely unused.
                u8 nuzlockeDupeFlags[52]; //taken from filler_348c field, which was originally 400 bytes. Used to prevent hijacking the dupe clause in Nuzlocke by catching fainted Pokemon.
@@ -836,7 +840,8 @@ struct SaveBlock1
     /*0x3A18*/ u8 seen2[52]; //made unreferenced & can be gotten rid of, though PKHeX presumably will still set this
     /*0x3A4C*/ u8 rivalName[PLAYER_NAME_LENGTH + 1];
     /*0x3A54*/ struct FameCheckerSaveData fameChecker[NUM_FAMECHECKER_PERSONS];
-    /*0x3A94*/ u8 unused_3A94[44]; //max fame checker people is actually 32, so this is the unused 16 entries
+    /*0x3A94*/ struct SoulLinkPair soulLinkFameReservePairs[1];
+               u8 unused_3A94[12];
                u8 masterTrainerFlags[20]; //taken from above unused_3A94 field, which was originally 64 bytes long. 1 byte longer than necessary for alignment.
     /*0x3AD4*/ u8 registeredTexts[UNION_ROOM_KB_ROW_COUNT][21];
     /*0x3BA8*/ struct TrainerNameRecord trainerNameRecords[20];

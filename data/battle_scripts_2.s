@@ -146,6 +146,23 @@ BattleScript_GhostBallDodge::
 	waitmessage B_WAIT_TIME_LONG
 	finishaction
 
+BattleScript_SoulLinkCaptureBlocked::
+	waitmessage B_WAIT_TIME_LONG
+	printstring STRINGID_SOULLINKCAPTUREBLOCKED
+	waitmessage B_WAIT_TIME_LONG
+	jumpifnotbattletype BATTLE_TYPE_SAFARI, BattleScript_CatchFailEnd
+	jumpifbyte CMP_NOT_EQUAL, gNumSafariBalls, 0, BattleScript_CatchFailEnd
+	printstring STRINGID_OUTOFSAFARIBALLS
+	waitmessage B_WAIT_TIME_LONG
+	setbyte gBattleOutcome, B_OUTCOME_NO_SAFARI_BALLS
+	finishturn
+
+BattleScript_SoulLinkAcquisitionFailed::
+	printstring STRINGID_SOULLINKACQUISITIONFAILED
+	waitmessage B_WAIT_TIME_LONG
+	setbyte gBattleOutcome, B_OUTCOME_CAUGHT
+	finishturn
+
 BattleScript_PlayerUseItem::
 	moveendcase 15
 	end

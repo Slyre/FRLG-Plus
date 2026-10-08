@@ -1,0 +1,235 @@
+-- Generated for one exact ROM build; loaded automatically by play.bat.
+-- No cable emulation or remote Pokemon writes: only validated protocol inboxes.
+if SoulLinkBridge then SoulLinkBridge.stop() end
+local ENABLE = @ENABLE@
+local MAILBOX = @MAILBOX@
+local STATUS = @STATUS@
+local CONTROL = @CONTROL@
+local MAGIC = 0x31524C53
+local ROLE = @ROLE@
+local CRC = @CRC@
+local PORT = SOUL_LINK_LOCAL_PORT or 8766
+local WINDOW = 32
+local callbacksToRemove = {}
+local sock, incoming, outgoing = nil, "", ""
+local epoch, pointer, txSequence, txLast, rxPackets = 0, 0, nil, nil, {}
+local lastSequence, lastFrame, tick, failed = -1, nil, 0, false
+local START, DATA, FINISH, CANCEL, READY, DISCONNECT, ACK, HEARTBEAT, VIEW, COMMAND, REMOTE_VIEW = 1,2,3,4,5,6,7,8,9,10,11
+local snapshot, snapshotOffset, snapshotId = nil, 0, 0
+local remoteKey, remoteOffset, remotePointer = nil, 0, 0
+
+local function u16(s, offset)
+    return string.byte(s, offset) + string.byte(s, offset + 1) * 256
+end
+local function u32(s, offset)
+    return u16(s, offset) + u16(s, offset + 2) * 65536
+end
+local function le32(n)
+    return string.char(n % 256, math.floor(n / 256) % 256,
+        math.floor(n / 65536) % 256, math.floor(n / 16777216) % 256)
+end
+local function sequence(packet) return u16(packet, 13) end
+local function mailbox()
+    local p = emu:read32(MAILBOX)
+    if p < 0x02000000 or p + 4112 > 0x02040000 or p % 4 ~= 0 then return 0 end
+    if emu:read32(p) ~= MAGIC then return 0 end
+    return p
+end
+local function queue(kind, payload)
+    payload = payload or ""
+    if #payload > 64 or #outgoing + 76 > 8192 then error("Soul Link: queue overflow") end
+    outgoing = outgoing .. "SLN1" .. string.char(kind, ROLE, #payload, 0)
+        .. le32(epoch) .. payload .. string.rep("\0", 64 - #payload)
+end
+local function disconnect(reason)
+    if reason then console:log("Soul Link: " .. reason) end
+    local p = mailbox()
+    if p ~= 0 then emu:write8(p + 11, 1) end
+    -- Older mGBA socket bindings close again during userdata destruction.
+    -- Let the userdata own the handle; explicitly closing and then collecting
+    -- it can close a newly reused OS descriptor after reconnection.
+    sock, incoming, outgoing, rxPackets = nil, "", "", {}
+    collectgarbage("collect")
+    epoch, pointer, txSequence, txLast, lastSequence = 0, 0, nil, nil, -1
+    snapshot, snapshotOffset = nil, 0
+    remoteKey, remoteOffset, remotePointer = nil, 0, 0
+    failed = true
+end
+local function message(frame)
+    if frame:sub(1,4) ~= "SLN1" or string.byte(frame,6) ~= ROLE then error("Invalid bridge frame") end
+    local kind, size, generation = string.byte(frame,5), u16(frame,7), u32(frame,9)
+    if size > 64 or frame:sub(13 + size) ~= string.rep("\0",64 - size) then error("Invalid bridge payload") end
+    if kind == HEARTBEAT then return end
+    if kind == REMOTE_VIEW then
+        local payload = frame:sub(13,12 + size)
+        if size <= 8 or size > 56 then error("Invalid remote reading chunk") end
+        local key, offset, total = u32(payload,1), u16(payload,5), u16(payload,7)
+        local control = emu:read32(CONTROL)
+        if total ~= 2952 or offset + size - 8 > total then error("Invalid remote reading bounds") end
+        if control < 0x02000000 or control + 5952 > 0x02040000 or control % 4 ~= 0 then return end
+        if emu:read32(control) ~= 0x31434C53 then return end
+        if offset == 0 then
+            remoteKey, remoteOffset, remotePointer = key, 0, control
+            emu:write32(control + 5948, 0)
+        end
+        if remoteKey ~= key or remoteOffset ~= offset or remotePointer ~= control then return end
+        for i = 9,size do emu:write8(control + 2996 + offset + i - 9, string.byte(payload,i)) end
+        remoteOffset = offset + size - 8
+        if remoteOffset == total then emu:write32(control + 5948, key) end
+        return
+    end
+    if kind == COMMAND and size == 36 then
+        local payload = frame:sub(13,48)
+        local control = emu:read32(CONTROL)
+        if control < 0x02000000 or control + 5952 > 0x02040000 or control % 4 ~= 0 then return end
+        if emu:read32(control) ~= 0x31434C53 then return end
+        if string.byte(payload,5) == 5 and (remotePointer ~= control or emu:read32(control + 5948) ~= u32(payload,1)) then return end
+        emu:write8(control + 12, string.byte(payload,5))
+        emu:write8(control + 14, string.byte(payload,6))
+        emu:write8(control + 15, string.byte(payload,7))
+        for i = 9,36 do emu:write8(control + i + 7, string.byte(payload,i)) end
+        emu:write32(control + 4, u32(frame:sub(13,48),1)) -- publish the request last
+        return
+    end
+    if generation ~= epoch or epoch == 0 or mailbox() ~= pointer then return end
+    local payload = frame:sub(13,12 + size)
+    if kind == READY and size == 0 then
+        emu:write8(pointer + 10, 1)
+    elseif kind == DISCONNECT and size == 0 then
+        emu:write8(pointer + 11, 1)
+    elseif kind == ACK and size == 4 and u32(payload,1) == txSequence then
+        if txSequence == txLast then
+            emu:write8(pointer + 8, 0)
+            txSequence, txLast = nil, nil
+        else txSequence = txSequence + 1 end
+    elseif kind == DATA and size == 64 and #rxPackets < WINDOW then
+        rxPackets[#rxPackets + 1] = payload
+    else error("Unexpected bridge message") end
+end
+local function poll()
+    tick = tick + 1
+    local now = emu:currentFrame()
+    if lastFrame and now < lastFrame then
+        -- Quick load must start a fresh authenticated network session.
+        console:log("Soul Link: quick load detected; a new attempt is needed.")
+        disconnect()
+    end
+    lastFrame = now
+    emu:write32(ENABLE, MAGIC)
+    if not sock then
+        if tick % 120 ~= 1 then return end
+        local candidate = _socket.create()
+        if candidate:connect("127.0.0.1", PORT) ~= 0 then return end
+        sock, incoming, outgoing = candidate, "", ""
+        if failed then
+            local p = mailbox()
+            if p ~= 0 then emu:write8(p + 11, 1) end
+            failed = false
+        end
+        console:log("Soul Link: local companion connected (" .. (ROLE == 0 and "A" or "B") .. ")")
+    end
+    for i = 1, 4 do
+        local available = sock:select(0)
+        if available == 0 then break end
+        if available ~= 1 then disconnect("socket closed"); return end
+        local bytes = sock:recv(1024)
+        if #bytes == 0 then
+            if sock.error == C.SOCKERR.AGAIN then break end
+            disconnect("local connection closed"); return
+        end
+        incoming = incoming .. bytes
+        if #incoming > 4096 then disconnect(); return end
+        while #incoming >= 76 do
+            local frame = incoming:sub(1,76)
+            incoming = incoming:sub(77)
+            message(frame)
+        end
+    end
+    -- A bounded local snapshot every quarter-second keeps command ACKs,
+    -- safe-state changes and captures responsive. Unchanged views stay local.
+    if not snapshot and tick % 15 == 0 then
+        local control = emu:read32(CONTROL)
+        if control >= 0x02000000 and control + 2996 <= 0x02040000 and control % 4 == 0
+            and emu:read32(control) == 0x31434C53 and emu:read32(control + 48) ~= 0 then
+            snapshot = emu:readRange(control, 2996)
+            snapshotOffset = 0
+            snapshotId = (snapshotId + 1) % 4294967295
+        end
+    end
+    if snapshot then
+        for i = 1,16 do
+            local bytes = snapshot:sub(snapshotOffset + 1, snapshotOffset + 48)
+            local header = le32(snapshotId) .. string.char(snapshotOffset % 256, math.floor(snapshotOffset / 256), 180, 11)
+            queue(VIEW, header .. bytes)
+            snapshotOffset = snapshotOffset + #bytes
+            if snapshotOffset == #snapshot then snapshot = nil; break end
+        end
+    end
+    local p = mailbox()
+    if p ~= 0 then
+        local generation = emu:read32(p + 4)
+        if generation ~= epoch or p ~= pointer then
+            if epoch ~= 0 then queue(CANCEL) end
+            epoch, pointer, txSequence, txLast, lastSequence, rxPackets = generation, p, nil, nil, -1, {}
+            queue(START, CRC)
+        end
+        if #rxPackets > 0 and emu:read8(p + 9) == 0 then
+            local count = #rxPackets
+            for row = 1,count do
+                local rxPacket = table.remove(rxPackets, 1)
+                local address = row == 1 and p + 76 or p + 2128 + (row - 2) * 64
+                for i = 1,64 do emu:write8(address + i - 1, string.byte(rxPacket,i)) end
+                queue(ACK, le32(sequence(rxPacket)))
+            end
+            emu:write16(p + 142, count)
+            emu:write8(p + 9, 1)
+        end
+        if emu:read8(p + 8) ~= 0 and txSequence == nil then
+            local packet = emu:readRange(p + 12,64)
+            local seq = sequence(packet)
+            local count = emu:read16(p + 140)
+            if count < 1 or count > WINDOW then error("Invalid ROM batch") end
+            if count > 1 and string.byte(packet,18) ~= 2 and string.byte(packet,18) ~= 4 then
+                error("Invalid ROM batch phase")
+            end
+            if seq <= lastSequence then disconnect("old packet after resume"); return end
+            txSequence, txLast, lastSequence = seq, seq + count - 1, seq + count - 1
+            queue(DATA, packet)
+            for i = 1,count - 1 do
+                local extra = emu:readRange(p + 144 + (i - 1) * 64,64)
+                if sequence(extra) ~= seq + i or string.byte(extra,18) ~= string.byte(packet,18) then
+                    error("Invalid ROM batch sequence")
+                end
+                queue(DATA, extra)
+            end
+        end
+    elseif epoch ~= 0 then
+        local status = emu:read8(STATUS)
+        queue((status == 3 or status == 10) and FINISH or CANCEL)
+        epoch, pointer, txSequence, txLast, lastSequence, rxPackets = 0, 0, nil, nil, -1, {}
+    end
+    if tick % 120 == 0 then queue(HEARTBEAT) end
+    if #outgoing > 0 then
+        local n = sock:send(outgoing)
+        if n > 0 then outgoing = outgoing:sub(n + 1)
+        elseif n < 0 and sock.error ~= C.SOCKERR.AGAIN then disconnect("local send interrupted") end
+    end
+end
+
+SoulLinkBridge = {}
+function SoulLinkBridge.stop()
+    for _, id in ipairs(callbacksToRemove) do callbacks:remove(id) end
+    disconnect()
+    emu:write32(ENABLE, 0)
+end
+function SoulLinkBridge.update()
+    local ok, err = pcall(poll)
+    if not ok then console:error(tostring(err)); disconnect() end
+end
+if emu:checksum() ~= CRC then
+    console:error("Soul Link: this script does not match the loaded ROM.")
+else
+    callbacksToRemove[1] = callbacks:add("frame", SoulLinkBridge.update)
+    callbacksToRemove[2] = callbacks:add("stop", SoulLinkBridge.stop)
+    console:log("Soul Link Internet enabled. The companion handles duo updates.")
+end

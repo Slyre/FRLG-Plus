@@ -1328,3 +1328,5 @@ EventScript_NoMoreRoomForPokemon::
 
 	.include "data/maps/BattleFrontier_RankingHall/scripts.inc"
 	.include "data/maps/BattleFrontier_RankingHall/text.inc"
+
+	.include "data/scripts/soul_link.inc"

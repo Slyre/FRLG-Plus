@@ -8,6 +8,7 @@
 #include "save_failed_screen.h"
 #include "fieldmap.h"
 #include "pokemon_storage_system.h"
+#include "soul_link.h"
 #include "gba/flash_internal.h"
 
 static u8 HandleWriteSector(u16 sectorId, const struct SaveSectorLocation *locations);
@@ -17,6 +18,8 @@ static u8 CopySaveSlotData(u16 sectorId, const struct SaveSectorLocation *locati
 static u8 GetSaveValidStatus(const struct SaveSectorLocation *locations);
 static u8 ReadFlashSector(u8 sectorId, struct SaveSector *sector);
 static u16 CalculateChecksum(void *data, u16 size);
+static bool8 IsLegacySaveSlot(u16 firstSector, const struct SaveSectorLocation *locations);
+static u16 GetValidatedSectorSize(struct SaveSector *sector, const struct SaveSectorLocation *locations, bool8 legacy);
 
 /*
  * Sector Layout:
@@ -75,6 +78,17 @@ struct
 STATIC_ASSERT(sizeof(struct SaveBlock2) <= SECTOR_DATA_SIZE, SaveBlock2FreeSpace);
 STATIC_ASSERT(sizeof(struct SaveBlock1) <= SECTOR_DATA_SIZE * (SECTOR_ID_SAVEBLOCK1_END - SECTOR_ID_SAVEBLOCK1_START + 1), SaveBlock1FreeSpace);
 STATIC_ASSERT(sizeof(struct PokemonStorage) <= SECTOR_DATA_SIZE * (SECTOR_ID_PKMN_STORAGE_END - SECTOR_ID_PKMN_STORAGE_START + 1), PokemonStorageFreeSpace);
+STATIC_ASSERT(sizeof(struct BoxPokemon) == 80, SoulLinkBoxPokemonLayout);
+STATIC_ASSERT(sizeof(struct Pokemon) == 100, SoulLinkPokemonLayout);
+STATIC_ASSERT(sizeof(struct SaveBlock1) == 0x3D68, SoulLinkSaveBlock1Layout);
+STATIC_ASSERT(sizeof(struct SaveBlock2) == 0xF24, SoulLinkSaveBlock2Layout);
+STATIC_ASSERT(offsetof(struct SaveBlock2, soulLink) == 0xB20, SoulLinkReserveOffset);
+STATIC_ASSERT(offsetof(struct SaveBlock1, soulLinkItemReservePairs) == 0x59C, SoulLinkItemReserveOffset);
+STATIC_ASSERT(offsetof(struct SaveBlock1, soulLinkOldManReservePairs) == 0x2F18, SoulLinkOldManReserveOffset);
+STATIC_ASSERT(offsetof(struct SaveBlock1, soulLinkEasyChatReservePairs) == 0x2F58, SoulLinkEasyChatReserveOffset);
+STATIC_ASSERT(offsetof(struct SaveBlock1, soulLinkFreeWorkPairs) == 0x348C, SoulLinkFreeWorkReserveOffset);
+STATIC_ASSERT(offsetof(struct SaveBlock1, soulLinkFameReservePairs) == 0x3A94, SoulLinkFameReserveOffset);
+STATIC_ASSERT(offsetof(struct PokemonStorage, soulLinkPairs) == SOUL_LINK_LEGACY_STORAGE_SIZE, SoulLinkStorageOffset);
 
 // Sector num to begin writing save data. Sectors are rotated each time the game is saved. (possibly to avoid wear on flash memory?)
 u16 gLastWrittenSector;
@@ -423,27 +437,53 @@ static u8 TryLoadSaveSlot(u16 sectorId, const struct SaveSectorLocation *locatio
     return status;
 }
 
+static bool8 IsLegacySaveSlot(u16 firstSector, const struct SaveSectorLocation *locations)
+{
+    u16 i;
+    for (i = 0; i < NUM_SECTORS_PER_SLOT; i++)
+    {
+        ReadFlashSector(firstSector + i, gSaveDataBufferPtr);
+        if (gSaveDataBufferPtr->id == SECTOR_ID_SAVEBLOCK2
+         && GetValidatedSectorSize(gSaveDataBufferPtr, locations, FALSE) != 0)
+            return SoulLink_IsLegacySaveBlock2(gSaveDataBufferPtr->data, locations[SECTOR_ID_SAVEBLOCK2].size);
+    }
+    return FALSE;
+}
+
+static u16 GetValidatedSectorSize(struct SaveSector *sector, const struct SaveSectorLocation *locations, bool8 legacy)
+{
+    u16 size;
+    if (sector->signature != SECTOR_SIGNATURE || sector->id >= NUM_SECTORS_PER_SLOT)
+        return 0;
+    size = locations[sector->id].size;
+    if (legacy && sector->id == SECTOR_ID_PKMN_STORAGE_END)
+        size = SOUL_LINK_LEGACY_STORAGE_SIZE - SECTOR_DATA_SIZE * (SECTOR_ID_PKMN_STORAGE_END - SECTOR_ID_PKMN_STORAGE_START);
+    if (size == 0 || size > SECTOR_DATA_SIZE || sector->checksum != CalculateChecksum(sector->data, size))
+        return 0;
+    return size;
+}
+
 // sectorId is unused. All sectors in the save slot are read and copied.
 static u8 CopySaveSlotData(u16 sectorId, const struct SaveSectorLocation *locations)
 {
     u32 i;
-    u16 checksum;
+    u16 size;
     u16 sector = NUM_SECTORS_PER_SLOT * (gSaveCounter % NUM_SAVE_SLOTS);
     u16 id;
+    bool8 legacy = IsLegacySaveSlot(sector, locations);
 
     for (i = 0; i < NUM_SECTORS_PER_SLOT; i++)
     {
         ReadFlashSector(i + sector, gSaveDataBufferPtr);
         id = gSaveDataBufferPtr->id;
-        if (id == 0)
-            gLastWrittenSector = i;
-
-        checksum = CalculateChecksum(gSaveDataBufferPtr->data, locations[id].size);
-        if (gSaveDataBufferPtr->signature == SECTOR_SIGNATURE && gSaveDataBufferPtr->checksum == checksum)
+        size = GetValidatedSectorSize(gSaveDataBufferPtr, locations, legacy);
+        if (size != 0)
         {
             u32 j;
+            if (id == SECTOR_ID_SAVEBLOCK2)
+                gLastWrittenSector = i;
             for (j = 0; j < locations[id].size; j++)
-                locations[id].data[j] = gSaveDataBufferPtr->data[j];
+                locations[id].data[j] = j < size ? gSaveDataBufferPtr->data[j] : 0;
         }
     }
 
@@ -454,25 +494,25 @@ static u8 GetSaveValidStatus(const struct SaveSectorLocation *locations)
 {
     u16 sector;
     bool8 signatureValid;
-    u16 checksum;
     u32 slot1saveCounter = 0;
     u32 slot2saveCounter = 0;
     u8 slot1Status;
     u8 slot2Status;
     u32 validSectors;
+    bool8 legacy;
     const u32 ALL_SECTORS = (1 << NUM_SECTORS_PER_SLOT) - 1;  // bitmask of all saveblock sectors
 
     // check save slot 1.
     validSectors = 0;
     signatureValid = FALSE;
+    legacy = IsLegacySaveSlot(0, locations);
     for (sector = 0; sector < NUM_SECTORS_PER_SLOT; sector++)
     {
         ReadFlashSector(sector, gSaveDataBufferPtr);
         if (gSaveDataBufferPtr->signature == SECTOR_SIGNATURE)
         {
             signatureValid = TRUE;
-            checksum = CalculateChecksum(gSaveDataBufferPtr->data, locations[gSaveDataBufferPtr->id].size);
-            if (gSaveDataBufferPtr->checksum == checksum)
+            if (GetValidatedSectorSize(gSaveDataBufferPtr, locations, legacy) != 0)
             {
                 slot1saveCounter = gSaveDataBufferPtr->counter;
                 validSectors |= 1 << gSaveDataBufferPtr->id;
@@ -493,14 +533,14 @@ static u8 GetSaveValidStatus(const struct SaveSectorLocation *locations)
     // check save slot 2.
     validSectors = 0;
     signatureValid = FALSE;
+    legacy = IsLegacySaveSlot(NUM_SECTORS_PER_SLOT, locations);
     for (sector = 0; sector < NUM_SECTORS_PER_SLOT; sector++)
     {
         ReadFlashSector(NUM_SECTORS_PER_SLOT + sector, gSaveDataBufferPtr);
         if (gSaveDataBufferPtr->signature == SECTOR_SIGNATURE)
         {
             signatureValid = TRUE;
-            checksum = CalculateChecksum(gSaveDataBufferPtr->data, locations[gSaveDataBufferPtr->id].size);
-            if (gSaveDataBufferPtr->checksum == checksum)
+            if (GetValidatedSectorSize(gSaveDataBufferPtr, locations, legacy) != 0)
             {
                 slot2saveCounter = gSaveDataBufferPtr->counter;
                 validSectors |= 1 << gSaveDataBufferPtr->id;
@@ -791,6 +831,7 @@ u8 LoadGameSave(u8 saveType)
     if (gFlashMemoryPresent != TRUE)
     {
         gSaveFileStatus = SAVE_STATUS_NO_FLASH;
+        SoulLink_InvalidateRuntime();
         return SAVE_STATUS_ERROR;
     }
 
@@ -802,6 +843,10 @@ u8 LoadGameSave(u8 saveType)
         result = TryLoadSaveSlot(FULL_SAVE_SLOT, gRamSaveSectorLocations);
         LoadSerializedGame();
         gSaveFileStatus = result;
+        if (result == SAVE_STATUS_OK || result == SAVE_STATUS_ERROR)
+            SoulLink_LoadSaveData();
+        else
+            SoulLink_InvalidateRuntime();
         gGameContinueCallback = NULL;
         break;
     case SAVE_HALL_OF_FAME:

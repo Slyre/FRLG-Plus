@@ -1,4 +1,5 @@
 #include "global.h"
+#include "soul_link_local.h"
 #include "gflib.h"
 #include "task.h"
 #include "util.h"
@@ -1062,6 +1063,8 @@ static void TradeMons(u8 playerPartyIdx, u8 partnerPartyIdx)
 
     struct Pokemon * partnerMon = &gEnemyParty[partnerPartyIdx];
     u16 partnerMail = GetMonData(partnerMon, MON_DATA_MAIL);
+    if (!gReceivedRemoteLinkPlayers && !SoulLink_TransferNpcTrade(playerMon, partnerMon))
+        return;
 
     // The mail attached to the sent Pokemon no longer exists in your file.
     if (playerMail != MAIL_NONE)

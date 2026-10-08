@@ -1,0 +1,24 @@
+[Unit]
+Description=Relais Internet Pokémon Soul Link
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=soullink
+Group=soullink
+WorkingDirectory=/opt/soullink
+ExecStart=/usr/bin/python3 /opt/soullink/public_relay.py --port 8443 --cert /etc/soullink/fullchain.pem --key /etc/soullink/privkey.pem
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+MemoryMax=256M
+TasksMax=64
+LimitNOFILE=1024
+
+[Install]
+WantedBy=multi-user.target

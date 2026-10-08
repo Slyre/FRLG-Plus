@@ -1,4 +1,7 @@
 #include "global.h"
+#include "soul_link.h"
+#include "soul_link_rules.h"
+#include "nuzlocke.h"
 #include "task.h"
 #include "help_system.h"
 #include "overworld.h"
@@ -181,93 +184,7 @@ static const struct TrainerBattleParameter sContinueScriptDoubleBattleParams[] =
     {&sTrainerBattleEndScript,      TRAINER_PARAM_LOAD_SCRIPT_RET_ADDR},
 };
 
-const u8 NuzlockeLUT[MAPSEC_COUNT] = //84 used, 214 total
-{   //any mapsec not in this list = 0x0
-    [MAPSEC_PALLET_TOWN] = 0x1,
-    [MAPSEC_VIRIDIAN_CITY] = 0x2,
-    [MAPSEC_CERULEAN_CITY] = 0x3,
-    [MAPSEC_VERMILION_CITY] = 0x4,
-    [MAPSEC_CELADON_CITY] = 0x5,
-    [MAPSEC_FUCHSIA_CITY] = 0x6,
-    [MAPSEC_CINNABAR_ISLAND] = 0x7,
-    [MAPSEC_ROUTE_1] = 0x8,
-    [MAPSEC_ROUTE_2] = 0x9,
-    [MAPSEC_ROUTE_3] = 0xA,
-    [MAPSEC_ROUTE_4] = 0xB,
-    [MAPSEC_ROUTE_5] = 0xC,
-    [MAPSEC_ROUTE_6] = 0xD,
-    [MAPSEC_ROUTE_7] = 0xE,
-    [MAPSEC_ROUTE_8] = 0xF,
-    [MAPSEC_ROUTE_9] = 0x10,
-    [MAPSEC_ROUTE_10] = 0x11,
-    [MAPSEC_ROUTE_11] = 0x12,
-    [MAPSEC_ROUTE_12] = 0x13,
-    [MAPSEC_ROUTE_13] = 0x14,
-    [MAPSEC_ROUTE_14] = 0x15,
-    [MAPSEC_ROUTE_15] = 0x16,
-    [MAPSEC_ROUTE_16] = 0x17,
-    [MAPSEC_ROUTE_17] = 0x18,
-    [MAPSEC_ROUTE_18] = 0x19,
-    [MAPSEC_ROUTE_19] = 0x1A,
-    [MAPSEC_ROUTE_20] = 0x1B,
-    [MAPSEC_ROUTE_21] = 0x1C,
-    [MAPSEC_ROUTE_22] = 0x1D,
-    [MAPSEC_ROUTE_23] = 0x1E,
-    [MAPSEC_ROUTE_24] = 0x1F,
-    [MAPSEC_ROUTE_25] = 0x20,
-    [MAPSEC_VIRIDIAN_FOREST] = 0x21,
-    [MAPSEC_MT_MOON] = 0x22,
-    [MAPSEC_S_S_ANNE] = 0x23,
-    [MAPSEC_DIGLETTS_CAVE] = 0x24,
-    [MAPSEC_KANTO_VICTORY_ROAD] = 0x25,
-    [MAPSEC_POKEMON_MANSION] = 0x26,
-    [MAPSEC_KANTO_SAFARI_ZONE] = 0x27,
-    [MAPSEC_ROCK_TUNNEL] = 0x28,
-    [MAPSEC_SEAFOAM_ISLANDS] = 0x29,
-    [MAPSEC_POKEMON_TOWER] = 0x2A,
-    [MAPSEC_CERULEAN_CAVE] = 0x2B,
-    [MAPSEC_POWER_PLANT] = 0x2C,
-    [MAPSEC_ONE_ISLAND] = 0x2D,
-    [MAPSEC_FOUR_ISLAND] = 0x2E,
-    [MAPSEC_FIVE_ISLAND] = 0x2F,
-    [MAPSEC_KINDLE_ROAD] = 0x30,
-    [MAPSEC_TREASURE_BEACH] = 0x31,
-    [MAPSEC_CAPE_BRINK] = 0x32,
-    [MAPSEC_BOND_BRIDGE] = 0x33,
-    [MAPSEC_THREE_ISLE_PORT] = 0x34,
-    [MAPSEC_RESORT_GORGEOUS] = 0x35,
-    [MAPSEC_WATER_LABYRINTH] = 0x36,
-    [MAPSEC_FIVE_ISLE_MEADOW] = 0x37,
-    [MAPSEC_MEMORIAL_PILLAR] = 0x38,
-    [MAPSEC_OUTCAST_ISLAND] = 0x39,
-    [MAPSEC_GREEN_PATH] = 0x3A,
-    [MAPSEC_WATER_PATH] = 0x3B,
-    [MAPSEC_RUIN_VALLEY] = 0x3C,
-    [MAPSEC_TRAINER_TOWER] = 0x3D,
-    [MAPSEC_CANYON_ENTRANCE] = 0x3E,
-    [MAPSEC_SEVAULT_CANYON] = 0x3F,
-    [MAPSEC_TANOBY_RUINS] = 0x40,
-    [MAPSEC_NAVEL_ROCK] = 0x41,
-    [MAPSEC_MT_EMBER] = 0x42,
-    [MAPSEC_BERRY_FOREST] = 0x43,
-    [MAPSEC_ICEFALL_CAVE] = 0x44,
-    [MAPSEC_LOST_CAVE] = 0x45,
-    [MAPSEC_PATTERN_BUSH] = 0x46,
-    [MAPSEC_ALTERING_CAVE] = 0x47,
-    [MAPSEC_MONEAN_CHAMBER] = 0x48,
-    [MAPSEC_LIPTOO_CHAMBER] = 0x49,
-    [MAPSEC_WEEPTH_CHAMBER] = 0x4A,
-    [MAPSEC_DILFORD_CHAMBER] = 0x4B,
-    [MAPSEC_SCUFIB_CHAMBER] = 0x4C,
-    [MAPSEC_RIXY_CHAMBER] = 0x4D,
-    [MAPSEC_VIAPOIS_CHAMBER] = 0x4E,
-    //Other Safari Zone areas here, taking up 0x4F to 0x53
-    [MAPSEC_ARTISAN_CAVE] = 0x54,
-    [MAPSEC_SOUTHERN_ISLAND] = 0x55, //84
-    [MAPSEC_UNDERWATER_124] = 0x33, //reused Bond Bridge; same area but Underwater
-    [MAPSEC_BATTLE_FRONTIER] = 0x56
-};
-
+#include "data/nuzlocke_areas.h"
 
 #define tState data[0]
 #define tTransition data[1]
@@ -300,12 +217,30 @@ static void Task_BattleStart(u8 taskId)
     }
 }
 
-static void CreateBattleStartTask(u8 transition, u16 song) // song == 0 means default music for current map
+static void Task_SoulLinkBattleDenied(u8 taskId)
 {
-    u8 taskId = CreateTask(Task_BattleStart, 1);
+    UnfreezeObjectEvents();
+    UnlockPlayerFieldControls();
+    gBattleOutcome = B_OUTCOME_RAN;
+    ScriptContext_SetupScript(SoulLink_EventScript_RulesDenied);
+    DestroyTask(taskId);
+}
+
+static bool8 CreateBattleStartTask(u8 transition, u16 song) // song == 0 means default music for current map
+{
+    u8 taskId;
+    struct SoulLinkConfig config;
+    if (!(gBattleTypeFlags & (BATTLE_TYPE_OLD_MAN_TUTORIAL | BATTLE_TYPE_POKEDUDE | BATTLE_TYPE_SAFARI))
+     && SoulLink_GetConfig(&config) && !SoulLink_ValidatePartyRules(&config))
+    {
+        CreateTask(Task_SoulLinkBattleDenied, 1);
+        return FALSE;
+    }
+    taskId = CreateTask(Task_BattleStart, 1);
 
     gTasks[taskId].tTransition = transition;
     PlayMapChosenOrBattleBGM(song);
+    return TRUE;
 }
 
 static bool8 CheckSilphScopeInPokemonTower(u16 mapGroup, u16 mapNum)
@@ -341,7 +276,8 @@ static void DoStandardWildBattle(void)
     StopPlayerAvatar();
     gMain.savedCallback = CB2_EndWildBattle;
     gBattleTypeFlags = 0;
-    CreateBattleStartTask(GetWildBattleTransition(), 0);
+    if (!CreateBattleStartTask(GetWildBattleTransition(), 0))
+        return;
     IncrementGameStat(GAME_STAT_TOTAL_BATTLES);
     IncrementGameStat(GAME_STAT_WILD_BATTLES);
 }
@@ -353,7 +289,8 @@ void StartRoamerBattle(void)
     StopPlayerAvatar();
     gMain.savedCallback = CB2_EndWildBattle;
     gBattleTypeFlags = BATTLE_TYPE_ROAMER;
-    CreateBattleStartTask(GetWildBattleTransition(), MUS_C_VS_LEGEND_BEAST);
+    if (!CreateBattleStartTask(GetWildBattleTransition(), MUS_C_VS_LEGEND_BEAST))
+        return;
     IncrementGameStat(GAME_STAT_TOTAL_BATTLES);
     IncrementGameStat(GAME_STAT_WILD_BATTLES);
 }
@@ -365,7 +302,8 @@ static void DoSafariBattle(void)
     StopPlayerAvatar();
     gMain.savedCallback = CB2_EndSafariBattle;
     gBattleTypeFlags = BATTLE_TYPE_SAFARI;
-    CreateBattleStartTask(GetWildBattleTransition(), 0);
+    if (!CreateBattleStartTask(GetWildBattleTransition(), 0))
+        return;
 }
 
 static void DoGhostBattle(void)
@@ -375,7 +313,8 @@ static void DoGhostBattle(void)
     StopPlayerAvatar();
     gMain.savedCallback = CB2_EndWildBattle;
     gBattleTypeFlags = BATTLE_TYPE_GHOST;
-    CreateBattleStartTask(GetWildBattleTransition(), 0);
+    if (!CreateBattleStartTask(GetWildBattleTransition(), 0))
+        return;
     SetMonData(&gEnemyParty[0], MON_DATA_NICKNAME, gText_Ghost);
     IncrementGameStat(GAME_STAT_TOTAL_BATTLES);
     IncrementGameStat(GAME_STAT_WILD_BATTLES);
@@ -383,7 +322,8 @@ static void DoGhostBattle(void)
 
 static void DoTrainerBattle(void)
 {
-    CreateBattleStartTask(GetTrainerBattleTransition(), 0);
+    if (!CreateBattleStartTask(GetTrainerBattleTransition(), 0))
+        return;
     IncrementGameStat(GAME_STAT_TOTAL_BATTLES);
     IncrementGameStat(GAME_STAT_TRAINER_BATTLES);
 }
@@ -394,7 +334,8 @@ void StartOldManTutorialBattle(void)
     LockPlayerFieldControls();
     gMain.savedCallback = CB2_ReturnToFieldContinueScriptPlayMapMusic;
     gBattleTypeFlags = BATTLE_TYPE_OLD_MAN_TUTORIAL;
-    CreateBattleStartTask(B_TRANSITION_SLICE, 0);
+    if (!CreateBattleStartTask(B_TRANSITION_SLICE, 0))
+        return;
 }
 
 void StartScriptedWildBattle(void)
@@ -402,7 +343,8 @@ void StartScriptedWildBattle(void)
     LockPlayerFieldControls();
     gMain.savedCallback = CB2_EndScriptedWildBattle;
     gBattleTypeFlags = BATTLE_TYPE_WILD_SCRIPTED;
-    CreateBattleStartTask(GetWildBattleTransition(), 0);
+    if (!CreateBattleStartTask(GetWildBattleTransition(), 0))
+        return;
     IncrementGameStat(GAME_STAT_TOTAL_BATTLES);
     IncrementGameStat(GAME_STAT_WILD_BATTLES);
 }
@@ -420,7 +362,8 @@ void StartMarowakBattle(void)
     {
         gBattleTypeFlags = BATTLE_TYPE_GHOST;
     }
-    CreateBattleStartTask(GetWildBattleTransition(), 0);
+    if (!CreateBattleStartTask(GetWildBattleTransition(), 0))
+        return;
     SetMonData(&gEnemyParty[0], MON_DATA_NICKNAME, gText_Ghost);
     IncrementGameStat(GAME_STAT_TOTAL_BATTLES);
     IncrementGameStat(GAME_STAT_WILD_BATTLES);
@@ -431,7 +374,8 @@ void StartSouthernIslandBattle(void)
     LockPlayerFieldControls();
     gMain.savedCallback = CB2_EndScriptedWildBattle;
     gBattleTypeFlags = BATTLE_TYPE_LEGENDARY;
-    CreateBattleStartTask(GetWildBattleTransition(), MUS_RS_VS_WILD);
+    if (!CreateBattleStartTask(GetWildBattleTransition(), MUS_RS_VS_WILD))
+        return;
     IncrementGameStat(GAME_STAT_TOTAL_BATTLES);
     IncrementGameStat(GAME_STAT_WILD_BATTLES);
 }
@@ -447,23 +391,28 @@ void StartLegendaryBattle(void)
     switch (species)
     {
     case SPECIES_MEWTWO:
-        CreateBattleStartTask(B_TRANSITION_BLUR, MUS_VS_MEWTWO);
+        if (!CreateBattleStartTask(B_TRANSITION_BLUR, MUS_VS_MEWTWO))
+            return;
         break;
     case SPECIES_MEW:
-        CreateBattleStartTask(B_TRANSITION_GRID_SQUARES, MUS_VS_MEWTWO);
+        if (!CreateBattleStartTask(B_TRANSITION_GRID_SQUARES, MUS_VS_MEWTWO))
+            return;
         break;
     case SPECIES_DEOXYS:
-        CreateBattleStartTask(B_TRANSITION_BLUR, MUS_VS_DEOXYS);
+        if (!CreateBattleStartTask(B_TRANSITION_BLUR, MUS_VS_DEOXYS))
+            return;
         break;
     case SPECIES_MOLTRES:
     case SPECIES_ARTICUNO:
     case SPECIES_ZAPDOS:
     case SPECIES_HO_OH:
     case SPECIES_LUGIA:
-        CreateBattleStartTask(B_TRANSITION_BLUR, MUS_VS_LEGEND);
+        if (!CreateBattleStartTask(B_TRANSITION_BLUR, MUS_VS_LEGEND))
+            return;
         break;
     default:
-        CreateBattleStartTask(B_TRANSITION_BLUR, MUS_RS_VS_TRAINER);
+        if (!CreateBattleStartTask(B_TRANSITION_BLUR, MUS_RS_VS_TRAINER))
+            return;
         break;
     }
     IncrementGameStat(GAME_STAT_TOTAL_BATTLES);
@@ -475,10 +424,8 @@ void StartGroudonKyogreBattle(void)
     LockPlayerFieldControls();
     gMain.savedCallback = CB2_EndScriptedWildBattle;
     gBattleTypeFlags = BATTLE_TYPE_LEGENDARY | BATTLE_TYPE_KYOGRE_GROUDON;
-    if (gGameVersion == VERSION_FIRE_RED)
-        CreateBattleStartTask(B_TRANSITION_ANGLED_WIPES, MUS_RS_VS_TRAINER);
-    else // pointless, exactly the same
-        CreateBattleStartTask(B_TRANSITION_ANGLED_WIPES, MUS_RS_VS_TRAINER);
+    if (!CreateBattleStartTask(B_TRANSITION_ANGLED_WIPES, MUS_RS_VS_TRAINER))
+        return;
     IncrementGameStat(GAME_STAT_TOTAL_BATTLES);
     IncrementGameStat(GAME_STAT_WILD_BATTLES);
 }
@@ -488,7 +435,8 @@ void StartRegiBattle(void)
     LockPlayerFieldControls();
     gMain.savedCallback = CB2_EndScriptedWildBattle;
     gBattleTypeFlags = BATTLE_TYPE_LEGENDARY | BATTLE_TYPE_REGI;
-    CreateBattleStartTask(B_TRANSITION_BLUR, MUS_RS_VS_TRAINER);
+    if (!CreateBattleStartTask(B_TRANSITION_BLUR, MUS_RS_VS_TRAINER))
+        return;
     IncrementGameStat(GAME_STAT_TOTAL_BATTLES);
     IncrementGameStat(GAME_STAT_WILD_BATTLES);
 }
@@ -509,7 +457,8 @@ static void StartPokedudeBattle(void)
     gMain.savedCallback = EndPokedudeBattle;
     SavePlayerParty();
     InitPokedudePartyAndOpponent();
-    CreateBattleStartTask(GetWildBattleTransition(), 0);
+    if (!CreateBattleStartTask(GetWildBattleTransition(), 0))
+        return;
 }
 
 bool8 CheckNuzlockeDupeFlags(u16 species)
@@ -524,10 +473,36 @@ bool8 CheckNuzlockeDupeFlags(u16 species)
 bool8 IsWildMonNuzlockeDupe(u16 species)
 {
     u32 i;
+    struct SoulLinkPair pair;
+    u16 row;
+    u8 local;
+    if (!Nuzlocke_IsDupesClauseEnabled() || species == SPECIES_NONE || species >= NUM_SPECIES)
+        return FALSE;
     for (i = 0; i < EVOS_PER_LINE; i++)
     {   
         if (CheckNuzlockeDupeFlags(SpeciesToNationalPokedexNum(gEvolutionLines[species][i])))
             return TRUE;
+    }
+    if (SoulLink_IsEnabled())
+    {
+        // Acquisitions made before linking may have no Nuzlocke history bit.
+        // Caught (never merely seen) Pokédex entries retain that history.
+        for (i = 0; i < EVOS_PER_LINE; i++)
+            if (gEvolutionLines[species][i] != SPECIES_NONE
+             && GetSetPokedexFlag(SpeciesToNationalPokedexNum(gEvolutionLines[species][i]), FLAG_GET_CAUGHT))
+                return TRUE;
+        // Also use the local registry: recovery and shared deaths must remain
+        // duplicates even if an older save lacked the separate history bits.
+        local = gSaveBlock2Ptr->soulLink.header.localPlayer;
+        if (local < SOUL_LINK_PLAYER_COUNT)
+            for (row = 0; row < SoulLink_GetPairCount(); row++)
+                if (SoulLink_ReadPair(row, &pair)
+                 && (pair.encounterStates[local] == SOUL_LINK_ENCOUNTER_CAPTURED
+                  || pair.encounterStates[local] == SOUL_LINK_ENCOUNTER_DEAD))
+                    for (i = 0; i < EVOS_PER_LINE; i++)
+                        if (gEvolutionLines[species][i] != SPECIES_NONE
+                         && gEvolutionLines[species][i] == pair.mons[local].species)
+                            return TRUE;
     }
     return FALSE;
 }
@@ -543,7 +518,7 @@ void SetNuzlockeDupeFlags(u16 species)
 
 static void CB2_EndWildBattle(void)
 {
-    if(gSaveBlock1Ptr->keyFlags.nuzlocke == 1)
+    if(gSaveBlock1Ptr->keyFlags.nuzlocke == 1 && !SoulLink_IsEnabled())
     {   
         if(!IsWildMonNuzlockeDupe(GetMonData(&gEnemyParty[0], MON_DATA_SPECIES)))
         {
@@ -565,7 +540,7 @@ static void CB2_EndWildBattle(void)
 
 static void CB2_EndScriptedWildBattle(void)
 {
-    if(gSaveBlock1Ptr->keyFlags.nuzlocke == 1)
+    if(gSaveBlock1Ptr->keyFlags.nuzlocke == 1 && !SoulLink_IsEnabled())
     {   
         if(!IsWildMonNuzlockeDupe(GetMonData(&gEnemyParty[0], MON_DATA_SPECIES)))
         {

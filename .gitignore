@@ -63,3 +63,8 @@ prefabs.json
 my_script.js
 *.js
 *.sym
+__pycache__/
+*.py[cod]
+*.rtc
+*.zip
+!remote/companion-web/app.js

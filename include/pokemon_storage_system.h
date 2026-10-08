@@ -47,6 +47,7 @@ struct PokemonStorage
     /*0x0001*/ struct BoxPokemon boxes[TOTAL_BOXES_COUNT][IN_BOX_COUNT];
     /*0x8344*/ u8 boxNames[TOTAL_BOXES_COUNT][BOX_NAME_LENGTH + 1];
     /*0x83C2*/ u8 boxWallpapers[TOTAL_BOXES_COUNT];
+    /*0x83D0*/ struct SoulLinkPair soulLinkPairs[SOUL_LINK_OVERFLOW_PAIR_COUNT];
 };
 
 u8 *GetBoxNamePtr(u8 boxNumber);

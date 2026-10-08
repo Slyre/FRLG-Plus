@@ -4,6 +4,7 @@
 
 #ifndef GUARD_EVENT_SCRIPTS_H
 #define GUARD_EVENT_SCRIPTS_H
+extern const u8 SoulLink_EventScript_RulesDenied[];
 
 #include "global.h"
 
