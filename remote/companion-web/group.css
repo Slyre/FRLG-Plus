@@ -1,0 +1,48 @@
+/* The four-trainer journal keeps the paper, ink and theme of the companion. */
+.group-notebook{max-width:1360px;margin:24px auto;min-height:calc(100vh - 48px)}
+.group-connection-note{font-size:12px;line-height:1.6;color:var(--red);margin:16px 0 0}
+.group-connection-note:empty{display:none}
+.group-companion>.page-heading{align-items:center;margin-bottom:18px}
+.group-companion>.page-heading h1{font-size:30px;max-width:760px;margin:0}
+.group-companion>.next-step{margin-bottom:28px}
+.group-companion>.teams{grid-template-columns:repeat(4,minmax(0,1fr));gap:24px;align-items:start}
+.group-companion .team{min-width:0}
+.group-companion .team>header{min-height:74px;border-bottom-color:var(--green)}
+.group-companion .team h2{font-size:16px;line-height:1.4;overflow-wrap:anywhere}
+.group-companion .team header p{line-height:1.6;margin-top:7px;min-height:30px}
+.group-companion .mon{grid-template-columns:18px 40px minmax(0,1fr);gap:8px;min-height:70px}
+.group-companion .mon>.sprite{width:40px;height:40px}
+.group-companion .mon-name{font-size:13px;overflow-wrap:anywhere}
+.group-companion .mon-detail{font-size:10px;line-height:1.5}
+.group-companion .team .no-pairs{font-family:inherit;font-size:12px;line-height:1.7;padding:28px 12px;text-align:left;min-height:140px}
+.group-browser{margin-top:36px;padding-top:6px;border-top:2px solid var(--ink)}
+.group-browser .duo-picker-title{margin:20px 0 10px;font-size:25px}
+.group-browser>p.small{font-size:12px;line-height:1.7;margin-bottom:20px}
+.group-browser .pair-search{display:flex;gap:12px;max-width:760px}
+.group-browser .pair-search input{min-width:0;flex:1;padding:11px 12px;border-radius:3px}
+.group-browser .pair-search select{min-width:130px;padding:11px 12px}
+.group-browser>.duo-pairs{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin:18px 0 0;align-items:start}
+.group-browser .team-change{margin:0;padding:18px 20px;border-left-width:2px}
+.group-browser .team-change>h3{font:20px Georgia,serif;line-height:1.3;margin:0 0 5px;color:var(--ink)}
+.group-browser .team-change>.small{font-size:12px;line-height:1.6}
+.group-browser .team-change>.team-comparison{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 12px;margin:20px 0}
+.group-browser .pair-mon{align-items:center;min-width:0;gap:10px;text-align:left;flex-direction:row}
+.group-browser .pair-mon>.sprite{width:40px;height:40px;flex-shrink:0}
+.group-browser .pair-mon>div{min-width:0}
+.group-browser .pair-mon strong{font-size:12px;line-height:1.4;overflow-wrap:anywhere}
+.group-browser .pair-mon p{font-size:11px;line-height:1.5;margin:4px 0 0;overflow-wrap:anywhere}
+.group-browser .team-change>button{margin-top:4px;min-height:40px}
+.group-companion>.team-change{padding:22px 24px;margin-bottom:28px;background:var(--pale)}
+.group-companion>.team-change .team-change-progress{grid-template-columns:repeat(4,minmax(0,1fr));gap:20px}
+.group-companion>.team-change .team-change-progress li{display:block;min-width:0}
+.group-companion>.team-change .team-change-progress strong{font-size:13px;overflow-wrap:anywhere}
+.group-companion>.team-change .team-change-progress span{display:block;font-size:12px;line-height:1.6;color:var(--muted);margin-top:5px}
+.group-companion>.team-change .team-change-progress .applied span{color:var(--green)}
+.group-companion>.team-change>.small{font-size:12px;line-height:1.8;overflow-wrap:anywhere}
+.group-companion .selection-bar{margin-top:30px;gap:24px}
+.group-companion .selection-bar p{font-size:12px}
+.group-companion .selection-bar>button{flex-shrink:0}
+@media(max-width:1100px){.group-notebook{margin:16px;min-height:calc(100vh - 32px)}.group-companion>.teams{grid-template-columns:repeat(2,minmax(0,1fr));gap:28px 32px}.group-companion .mon{grid-template-columns:18px 48px minmax(0,1fr)}.group-companion .mon>.sprite{width:48px;height:48px}.group-companion .mon-name{font-size:14px}.group-companion .team>header{min-height:66px}.group-companion .team header p{min-height:20px}}
+@media(max-width:760px){.group-companion>.page-heading{gap:14px;align-items:flex-start}.group-companion>.page-heading h1{font-size:27px}.group-browser>.duo-pairs{grid-template-columns:1fr;gap:16px}.group-companion>.team-change .team-change-progress{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.group-browser{margin-top:28px}.group-browser .team-change{padding:16px}.group-companion>.team-change{padding:18px}.group-companion .selection-bar{gap:16px}}
+@media(max-width:650px){.group-notebook{margin:0;min-height:100vh}.group-companion>.teams{gap:24px 16px}.group-companion .mon{grid-template-columns:12px 32px minmax(0,1fr);gap:5px;min-height:64px}.group-companion .mon>.sprite{width:32px;height:32px}.group-companion .mon-name{font-size:12px}.group-companion .mon-detail{font-size:9px}.group-companion .slot{font-size:9px}.group-companion .team h2{font-size:14px}.group-companion .team header p{font-size:10px;min-height:32px}.group-companion>.next-step{font-size:12px;margin-bottom:22px}}
+@media(max-width:420px){.group-companion>.teams{grid-template-columns:1fr;gap:26px}.group-companion .team>header{min-height:0}.group-companion .team header p{min-height:0}.group-companion .mon{grid-template-columns:18px 44px minmax(0,1fr);gap:9px;min-height:64px}.group-companion .mon>.sprite{width:44px;height:44px}.group-companion .mon-name{font-size:14px}.group-companion .mon-detail{font-size:11px}.group-browser .pair-search{gap:8px;flex-wrap:wrap}.group-browser .pair-search input{flex-basis:100%}.group-browser .pair-search select{width:100%}.group-browser .pair-mon{gap:6px}.group-browser .pair-mon>.sprite{width:32px;height:32px}.group-browser .pair-mon strong{font-size:11px}.group-companion>.page-heading h1{font-size:25px}.group-companion .selection-bar{gap:10px}.group-companion .selection-bar>button{width:100%}}

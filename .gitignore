@@ -68,3 +68,5 @@ __pycache__/
 *.rtc
 *.zip
 !remote/companion-web/app.js
+!remote/companion-web/group.js
+!remote/companion-web/group-entry.js

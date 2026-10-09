@@ -112,7 +112,7 @@ class CompanionWeb:
                 status = 404
             else:
                 route = path[len(self.prefix):]
-                if method == 'GET' and route in ('', 'index.html', 'style.css', 'app.js', 'species'):
+                if method == 'GET' and (route in self.static or route == ''):
                     body, mime = self.static[route or 'index.html']
                 elif method == 'GET' and re.fullmatch(r'assets/[0-9]{1,3}\.png', route):
                     body = (self.root / 'companion-assets' / route[7:]).read_bytes()
